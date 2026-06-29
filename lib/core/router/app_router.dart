@@ -1,6 +1,6 @@
 import 'package:argos_app/core/router/auth_router_notifier.dart';
 import 'package:argos_app/features/auth/presentation/pages/login_page.dart';
-import 'package:argos_app/features/home/presentation/pages/home_page.dart';
+import 'package:argos_app/features/itinerary/presentation/pages/itinerary_page.dart';
 import 'package:argos_app/features/sync/presentation/pages/sync_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -39,7 +39,7 @@ GoRouter appRouter(Ref ref) {
       GoRoute(
         path: '/home',
         name: 'home',
-        builder: (context, state) => const HomePage(),
+        builder: (context, state) => const ItineraryPage(),
       ),
       GoRoute(
         path: '/sync',

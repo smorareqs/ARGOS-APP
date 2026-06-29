@@ -4,6 +4,9 @@ import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+/// Inicio de sesión — fondo teal con marca ARGOS y CTA dorado.
+/// El campo de usuario alimenta el `código` del auth offline-first.
+/// Ref: ARGOS App · Frame 01 · Inicio de sesión.
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
 
@@ -25,9 +28,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }
 
   Future<void> _submit() async {
+    FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) return;
     await ref.read(authProvider.notifier).login(
-          _codigoController.text,
+          _codigoController.text.trim(),
           _passwordController.text,
         );
   }
@@ -42,86 +46,36 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       }
     });
 
-    final authState = ref.watch(authProvider);
-    final isLoading = authState.isLoading;
+    final isLoading = ref.watch(authProvider).isLoading;
 
     return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(CustomDimensions.spacingLg),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 400),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      'ARGOS',
-                      style: CustomTypography.headlineLarge.copyWith(
-                        color: CustomColors.primary,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: CustomDimensions.spacingSm),
-                    Text(
-                      'Iniciar sesión',
-                      style: CustomTypography.titleMedium,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: CustomDimensions.spacingXl),
-                    TextFormField(
-                      controller: _codigoController,
-                      decoration: const InputDecoration(
-                        labelText: 'Código de usuario',
-                        prefixIcon: Icon(CustomIcons.login),
-                      ),
-                      textInputAction: TextInputAction.next,
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Ingresa tu código de usuario';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: CustomDimensions.spacingMd),
-                    TextFormField(
-                      controller: _passwordController,
-                      obscureText: _obscurePassword,
-                      decoration: InputDecoration(
-                        labelText: 'Contraseña',
-                        prefixIcon: const Icon(Icons.lock_outline),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscurePassword
-                                ? CustomIcons.visibilityOff
-                                : CustomIcons.visibility,
-                          ),
-                          onPressed: () {
-                            setState(() => _obscurePassword = !_obscurePassword);
-                          },
-                        ),
-                      ),
-                      onFieldSubmitted: (_) => _submit(),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Ingresa tu contraseña';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: CustomDimensions.spacingLg),
-                    PrimaryButton(
-                      label: 'Ingresar',
-                      isLoading: isLoading,
-                      onPressed: isLoading ? null : _submit,
-                    ),
-                  ],
-                ),
+      backgroundColor: CustomColors.primary,
+      resizeToAvoidBottomInset: true,
+      body: Form(
+        key: _formKey,
+        child: LoginPanel(
+          userController: _codigoController,
+          passwordController: _passwordController,
+          userLabel: 'Correo o usuario',
+          userHint: 'usuario',
+          isLoading: isLoading,
+          obscurePassword: _obscurePassword,
+          onToggleObscure: () =>
+              setState(() => _obscurePassword = !_obscurePassword),
+          onSubmit: isLoading ? () {} : _submit,
+          onForgotPassword: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Contacta a tu supervisor para restablecerla.'),
               ),
-            ),
-          ),
+            );
+          },
+          footer: 'ARGOS · v1.0 — Tenant: Costa Limpia S.A.',
+          userValidator: (value) => (value == null || value.trim().isEmpty)
+              ? 'Ingresa tu usuario'
+              : null,
+          passwordValidator: (value) =>
+              (value == null || value.isEmpty) ? 'Ingresa tu contraseña' : null,
         ),
       ),
     );
