@@ -34,11 +34,18 @@
 | shared | `0002_identity` | modifica `tenants` y `users`; crea `roles`, `role_permissions`, `memberships`, `refresh_tokens`, `one_time_tokens`, `invitations`, `device_tokens`, `jobs`, `platform_audit_log`; migra datos; crea schema `tenant_template` | 1 |
 | shared | `0003_billing` | `plans`, `subscriptions`, `invoices`, `payments`, `payment_events`, `api_keys` | 6 |
 | tenant | `0001_tenant_base` | `files`, `audit_log` | 1 |
-| tenant | `0002_operations` | `buildings`, `properties`, `property_owners`, `property_assignments`, `employees`, `employee_schedules`, `checklist_templates`, `checklist_template_items`, `tasks`, `task_checklist_items`, `task_events`, `task_consumptions`, `warehouses`, `inventory_items`, `inventory_stock`, `inventory_movements`, `employee_custody`, `inventory_discrepancies`, `restock_requests` | 2 |
-| tenant | `0003_maintenance_notifications` | `vendors`, `assets`, `maintenance_plans`, `maintenance_tickets`, `ticket_events`, `notifications`, `notification_preferences`, `alerts` | 3 |
-| tenant | `0004_reservations` | `booking_channels`, `property_ical_feeds`, `guests`, `reservations`, `reservation_guests`, `reservation_events`, `deposit_transactions`, `inspections`, `inspection_findings`, `guest_access_tokens`, `parking_spots`, `parking_assignments`, `shared_areas`, `shared_area_bookings`, `security_alarms`; agrega FK `tasks.reservation_id` y `maintenance_tickets.reported_by_guest_id` | 4 |
-| tenant | `0005_hr` | `attendance_records`, `payroll_periods`, `payroll_entries`, `payroll_settings`, `disciplinary_actions`, `performance_snapshots`, `goals`, `incentive_awards` | 5 |
-| tenant | `0006_chat` | `conversations`, `conversation_participants`, `messages`, `lock_devices`, `lock_access_codes` | 6 |
+| tenant | `0002_properties` (A) | `buildings`, `properties`, `property_owners`, `property_assignments`, `employees`, `employee_schedules`, `checklist_templates`, `checklist_template_items` | 2 |
+| tenant | `0003_tasks_inventory` (B) | `tasks`, `task_checklist_items`, `task_events`, `task_consumptions`, `warehouses`, `inventory_items`, `inventory_stock`, `inventory_movements`, `employee_custody`, `inventory_discrepancies`, `restock_requests` | 2 |
+| tenant | `0004_maintenance` (A) | `vendors`, `assets`, `maintenance_plans`, `maintenance_tickets`, `ticket_events`, `alerts` | 3 |
+| tenant | `0005_notifications` (B) | `notifications`, `notification_preferences` | 3 |
+| tenant | `0006_reservations` (A) | `booking_channels`, `property_ical_feeds`, `guests`, `reservations`, `reservation_guests`, `reservation_events`, `deposit_transactions`, `inspections`, `inspection_findings`; agrega FK `tasks.reservation_id` y `maintenance_tickets.reported_by_guest_id` | 4 |
+| tenant | `0007_guest_parking_areas` (B) | `guest_access_tokens`, `security_alarms`, `parking_spots`, `parking_assignments`, `shared_areas`, `shared_area_bookings` | 4 |
+| tenant | `0008_payroll` (A) | `payroll_settings`, `payroll_periods`, `payroll_entries`, `disciplinary_actions` | 5 |
+| tenant | `0009_attendance_metrics` (B) | `attendance_records`, `performance_snapshots`, `goals`, `incentive_awards` | 5 |
+| tenant | `0010_chat_locks` (B) | `conversations`, `conversation_participants`, `messages`, `lock_devices`, `lock_access_codes` | 6 |
+
+(A) y (B) indican la persona dueña según [reparto.md](reparto.md). La de B en cada fase
+apunta con `down_revision` a la de A de la misma fase.
 
 Orden de aplicación en cada despliegue: `shared` a head, luego `tenant` a head para
 todos los schemas. Comandos y `env.py` en [fase01.md §3.1](fase01.md).

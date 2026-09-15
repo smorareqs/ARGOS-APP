@@ -11,10 +11,17 @@ Todo queda en bitácora.
 
 Fuera de la fase: mantenimiento (fase 3), reservas (fase 4), nómina (fase 5).
 
-## 2. Modelo de datos (schema de tenant, migración `tenant/0002_operations`)
+## 2. Modelo de datos (schema de tenant, migraciones `tenant/0002_properties` y `tenant/0003_tasks_inventory`)
 
 Todas las tablas llevan `id`, `created_at`, `updated_at`. Las FK a usuarios apuntan a
 `shared.users(id)`.
+
+Reparto (ver [reparto.md](reparto.md)): `0002_properties` (Persona A) crea `buildings`,
+`properties`, `property_owners`, `property_assignments`, `employees`,
+`employee_schedules`, `checklist_templates` y `checklist_template_items`.
+`0003_tasks_inventory` (Persona B, `down_revision` = 0002) crea `tasks`,
+`task_checklist_items`, `task_events`, `task_consumptions` y todas las tablas de
+inventario.
 
 ### `buildings`
 

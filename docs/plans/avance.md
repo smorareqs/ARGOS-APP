@@ -120,6 +120,13 @@ Decisiones técnicas derivadas (detalladas en fase01.md):
   por rol, flujos críticos, ficha de cada pantalla de app y web, notificaciones y
   correos, lista de verificación y mapa pantalla ↔ fase.
 
+* Creado [reparto.md](reparto.md): división del trabajo entre Persona A (núcleo del
+  backend, módulos administrativos y web) y Persona B (app, design system y módulos de
+  campo del backend), con mapa de propiedad de archivos, reglas de trabajo en paralelo,
+  reparto por fase con hitos de integración y numeración fija de migraciones.
+* Las migraciones de tenant se renumeraron para que cada persona tenga las suyas
+  (0002 a 0010; ver tabla en base-de-datos.md §2). Los fase0N.md quedaron actualizados.
+
 Decisiones de diseño tomadas al escribir ux-ui.md:
 * Se mantienen la paleta teal/dorado y la tipografía EB Garamond + Verdana. Se agregan
   tokens semánticos de estado (`warning`, fondos `*Soft`, `overlay`, `offline`).

@@ -484,8 +484,8 @@ API de Nexxt.
 # 10. Plan por fases
 
 Documentos transversales: [base-de-datos.md](plans/base-de-datos.md) (modelo completo y
-migraciones) y [ux-ui.md](plans/ux-ui.md) (sistema visual, navegación y fichas de
-pantalla).
+migraciones), [ux-ui.md](plans/ux-ui.md) (sistema visual, navegación y fichas de
+pantalla) y [reparto.md](plans/reparto.md) (división del trabajo entre dos personas).
 
 | Fase | Contenido | Documento |
 | --- | --- | --- |

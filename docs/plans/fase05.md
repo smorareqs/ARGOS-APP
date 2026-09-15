@@ -12,7 +12,12 @@
 * Registrar el procedimiento disciplinario (sin descuentos de sueldo).
 * Métricas por colaborador, equipo y propiedad; metas e incentivos.
 
-## 2. Modelo de datos (migración `tenant/0005_hr`)
+## 2. Modelo de datos (migraciones `tenant/0008_payroll` y `tenant/0009_attendance_metrics`)
+
+Reparto (ver [reparto.md](reparto.md)): `0008_payroll` (Persona A) crea
+`payroll_settings`, `payroll_periods`, `payroll_entries` y `disciplinary_actions`.
+`0009_attendance_metrics` (Persona B) crea `attendance_records`,
+`performance_snapshots`, `goals` e `incentive_awards`.
 
 ### `attendance_records`
 

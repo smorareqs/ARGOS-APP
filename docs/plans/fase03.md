@@ -11,7 +11,11 @@
 * Sistema de notificaciones completo: push (FCM), correo (SES) y bandeja en app y web.
 * Panel de alertas en web.
 
-## 2. Modelo de datos (migración `tenant/0003_maintenance_notifications`)
+## 2. Modelo de datos (migraciones `tenant/0004_maintenance` y `tenant/0005_notifications`)
+
+Reparto (ver [reparto.md](reparto.md)): `0004_maintenance` (Persona A) crea `vendors`,
+`assets`, `maintenance_plans`, `maintenance_tickets`, `ticket_events` y `alerts`.
+`0005_notifications` (Persona B) crea `notifications` y `notification_preferences`.
 
 ### `vendors`
 

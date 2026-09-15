@@ -13,7 +13,7 @@
 
 ## 2. Chat
 
-### 2.1 Modelo (migración `tenant/0006_chat`)
+### 2.1 Modelo (migración `tenant/0010_chat_locks`, Persona B; incluye también las tablas de cerraduras de §4.2)
 
 `conversations`: `kind varchar(8) CHECK IN ('internal','guest')`, `title varchar(128)
 null`, `reservation_id uuid FK null` (obligatorio si `guest`), `created_by uuid null`,
@@ -113,7 +113,7 @@ Webhook público: `POST /public/billing/webhook/{provider}` con verificación de
 `source='api'` en `pending` y notifica al admin. Rate limit 60/min por clave. La
 integración concreta con la web del cliente se decide cuando entreguen su información.
 
-### 4.2 Cerraduras inteligentes Nexxt (`tenant/0006_chat` incluye estas tablas)
+### 4.2 Cerraduras inteligentes Nexxt (`tenant/0010_chat_locks` incluye estas tablas)
 
 `lock_devices`: `property_id FK`, `provider varchar(16) default 'nexxt'`,
 `external_id varchar(128)`, `name`, `is_active`, `credentials` cifradas.

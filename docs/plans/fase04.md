@@ -11,7 +11,15 @@ interna), inspecciones antes/después, parqueos, áreas comunes reservables por 
 tablero y alarmas de seguridad, importación iCal y acceso de huéspedes a la app sin
 contraseña.
 
-## 2. Modelo de datos (migración `tenant/0004_reservations`)
+## 2. Modelo de datos (migraciones `tenant/0006_reservations` y `tenant/0007_guest_parking_areas`)
+
+Reparto (ver [reparto.md](reparto.md)): `0006_reservations` (Persona A) crea
+`booking_channels`, `property_ical_feeds`, `guests`, `reservations`,
+`reservation_guests`, `reservation_events`, `deposit_transactions`, `inspections`,
+`inspection_findings` y agrega las FK `tasks.reservation_id` y
+`maintenance_tickets.reported_by_guest_id`. `0007_guest_parking_areas` (Persona B) crea
+`guest_access_tokens`, `security_alarms`, `parking_spots`, `parking_assignments`,
+`shared_areas` y `shared_area_bookings`.
 
 ### `booking_channels`
 
