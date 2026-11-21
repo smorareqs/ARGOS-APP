@@ -68,7 +68,7 @@ List<Map<String, Object?>> mockAgenda(
   if (day.weekday == DateTime.sunday) return const [];
 
   final seed = day.day + day.month * 31 + userId.codeUnits.fold<int>(0, (a, b) => a + b);
-  final count = day.weekday == DateTime.saturday ? 2 : 3 + seed % 2;
+  final count = 3 + seed % 2;
   final iso = TasksRemoteDataSource.isoDate(day);
   final relation = day.compareTo(ref); // <0 pasado, 0 hoy, >0 futuro
 
