@@ -1,4 +1,3 @@
-import 'package:argos_app/core/bootstrap/app_bootstrap.dart';
 import 'package:argos_app/core/router/app_router.dart';
 import 'package:argos_app/core/theme/app_theme.dart';
 import 'package:flutter/material.dart';
@@ -9,7 +8,6 @@ class ArgosApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    ref.watch(appBootstrapProvider);
     final router = ref.watch(appRouterProvider);
 
     return MaterialApp.router(

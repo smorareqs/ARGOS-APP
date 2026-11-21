@@ -4,33 +4,101 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'secure_storage_service.g.dart';
 
+/// Almacenamiento seguro (Keychain / Keystore) de la sesión y del inicio
+/// rápido. El token de acceso nunca se guarda aquí: vive solo en memoria.
 class SecureStorageService {
   SecureStorageService(this._storage);
 
-  static const _sessionTokenKey = 'session_token';
-  static const _deviceSerialKey = 'device_serial';
+  static const _refreshTokenKey = 'refresh_token';
+  static const _deviceIdKey = 'device_id';
+  static const _pinHashKey = 'pin_hash';
+  static const _pinFailuresKey = 'pin_failures';
+  static const _biometricEnabledKey = 'biometric_enabled';
+  static const _quickUnlockDeclinedKey = 'quick_unlock_declined';
+  static const _lastTenantKey = 'last_tenant_id';
+  static const _rememberTenantKey = 'remember_tenant';
   static const _lastSyncKey = 'fecha_ultimo_sync';
+
+  /// Claves del login local anterior (MD5), eliminado en la fase 1.
+  static const _legacyKeys = ['session_token', 'device_serial'];
 
   final FlutterSecureStorage _storage;
 
-  Future<String?> readSessionToken() => _storage.read(key: _sessionTokenKey);
+  // ── Sesión ─────────────────────────────────────────────
+  Future<String?> readRefreshToken() => _storage.read(key: _refreshTokenKey);
 
-  Future<void> writeSessionToken(String token) =>
-      _storage.write(key: _sessionTokenKey, value: token);
+  Future<void> writeRefreshToken(String token) =>
+      _storage.write(key: _refreshTokenKey, value: token);
 
-  Future<void> deleteSessionToken() => _storage.delete(key: _sessionTokenKey);
+  /// Identificador del dispositivo: se genera una vez y sobrevive al cierre
+  /// de sesión para que el backend reconozca el equipo.
+  Future<String?> readDeviceId() => _storage.read(key: _deviceIdKey);
 
-  Future<String?> readDeviceSerial() => _storage.read(key: _deviceSerialKey);
+  Future<void> writeDeviceId(String id) =>
+      _storage.write(key: _deviceIdKey, value: id);
 
-  Future<void> writeDeviceSerial(String serial) =>
-      _storage.write(key: _deviceSerialKey, value: serial);
+  // ── Inicio rápido ──────────────────────────────────────
+  Future<String?> readPinHash() => _storage.read(key: _pinHashKey);
 
+  Future<void> writePinHash(String hash) =>
+      _storage.write(key: _pinHashKey, value: hash);
+
+  Future<void> deletePinHash() => _storage.delete(key: _pinHashKey);
+
+  Future<int> readPinFailures() async =>
+      int.tryParse(await _storage.read(key: _pinFailuresKey) ?? '') ?? 0;
+
+  Future<void> writePinFailures(int count) =>
+      _storage.write(key: _pinFailuresKey, value: '$count');
+
+  Future<bool> readBiometricEnabled() => _readBool(_biometricEnabledKey);
+
+  Future<void> writeBiometricEnabled(bool enabled) =>
+      _writeBool(_biometricEnabledKey, enabled);
+
+  Future<bool> readQuickUnlockDeclined() => _readBool(_quickUnlockDeclinedKey);
+
+  Future<void> writeQuickUnlockDeclined(bool declined) =>
+      _writeBool(_quickUnlockDeclinedKey, declined);
+
+  // ── Preferencia de empresa (A4) ────────────────────────
+  Future<String?> readLastTenantId() => _storage.read(key: _lastTenantKey);
+
+  Future<void> writeLastTenantId(String tenantId) =>
+      _storage.write(key: _lastTenantKey, value: tenantId);
+
+  Future<bool> readRememberTenant() => _readBool(_rememberTenantKey);
+
+  Future<void> writeRememberTenant(bool remember) =>
+      _writeBool(_rememberTenantKey, remember);
+
+  // ── Sincronización ─────────────────────────────────────
   Future<String?> readLastSyncDate() => _storage.read(key: _lastSyncKey);
 
   Future<void> writeLastSyncDate(String isoDate) =>
       _storage.write(key: _lastSyncKey, value: isoDate);
 
-  Future<void> clearAll() => _storage.deleteAll();
+  /// Borra la sesión y el inicio rápido. Conserva el id del dispositivo y la
+  /// preferencia de empresa, que no son datos de sesión.
+  Future<void> clearSession() async {
+    for (final key in [
+      _refreshTokenKey,
+      _pinHashKey,
+      _pinFailuresKey,
+      _biometricEnabledKey,
+      _quickUnlockDeclinedKey,
+      _lastSyncKey,
+      ..._legacyKeys,
+    ]) {
+      await _storage.delete(key: key);
+    }
+  }
+
+  Future<bool> _readBool(String key) async =>
+      await _storage.read(key: key) == 'true';
+
+  Future<void> _writeBool(String key, bool value) =>
+      _storage.write(key: key, value: value ? 'true' : 'false');
 }
 
 @Riverpod(keepAlive: true)

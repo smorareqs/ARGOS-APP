@@ -3,6 +3,8 @@ import 'package:design_system/tokens/custom_dimensions.dart';
 import 'package:design_system/tokens/custom_typography.dart';
 import 'package:flutter/material.dart';
 
+/// Botón secundario de ARGOS — teal sólido.
+/// Ref: ARGOS Design System · 03 · Botones (secundario).
 class SecondaryButton extends StatelessWidget {
   const SecondaryButton({
     super.key,
@@ -17,16 +19,18 @@ class SecondaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final button = OutlinedButton(
+    final button = ElevatedButton(
       onPressed: onPressed,
-      style: OutlinedButton.styleFrom(
-        foregroundColor: CustomColors.primary,
-        side: const BorderSide(color: CustomColors.primary),
-        minimumSize: const Size(0, CustomDimensions.buttonHeight),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: CustomColors.primary,
+        foregroundColor: CustomColors.onPrimary,
+        disabledBackgroundColor: CustomColors.disabled,
+        minimumSize: const Size(0, CustomDimensions.buttonHeightSm),
+        elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(CustomDimensions.radiusMd),
+          borderRadius: BorderRadius.circular(CustomDimensions.radiusField),
         ),
-        textStyle: CustomTypography.labelLarge,
+        textStyle: CustomTypography.button.copyWith(fontSize: 13),
       ),
       child: Text(label),
     );

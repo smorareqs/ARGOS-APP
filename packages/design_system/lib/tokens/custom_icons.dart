@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+/// Catálogo de iconos ARGOS (Material rounded).
 abstract final class CustomIcons {
   static const IconData login = Icons.login_rounded;
   static const IconData home = Icons.home_rounded;
@@ -7,4 +8,61 @@ abstract final class CustomIcons {
   static const IconData logout = Icons.logout_rounded;
   static const IconData visibility = Icons.visibility_rounded;
   static const IconData visibilityOff = Icons.visibility_off_rounded;
+
+  static const IconData email = Icons.mail_outline_rounded;
+  static const IconData lock = Icons.lock_outline_rounded;
+  static const IconData arrowForward = Icons.arrow_forward_rounded;
+  static const IconData arrowBack = Icons.arrow_back_rounded;
+  static const IconData chevronRight = Icons.chevron_right_rounded;
+  static const IconData close = Icons.close_rounded;
+  static const IconData person = Icons.person_outline_rounded;
+  static const IconData search = Icons.search_rounded;
+  static const IconData refresh = Icons.refresh_rounded;
+  static const IconData check = Icons.check_circle_rounded;
+  static const IconData info = Icons.info_outline_rounded;
+  static const IconData error = Icons.error_outline_rounded;
+  static const IconData backspace = Icons.backspace_outlined;
+
+  // ── Navegación inferior (Itinerario) ───────────────────
+  static const IconData itinerary = Icons.calendar_today_rounded;
+  static const IconData activities = Icons.checklist_rounded;
+  static const IconData equipment = Icons.inventory_2_outlined;
+  static const IconData metrics = Icons.bar_chart_rounded;
+
+  // ── Destinos por rol (ux-ui.md §4.1) ───────────────────
+  static const IconData today = Icons.today_rounded;
+  static const IconData week = Icons.date_range_rounded;
+  static const IconData tickets = Icons.build_outlined;
+  static const IconData team = Icons.groups_outlined;
+  static const IconData reservations = Icons.event_available_outlined;
+  static const IconData security = Icons.shield_outlined;
+  static const IconData alarm = Icons.alarm_rounded;
+  static const IconData sharedAreas = Icons.deck_outlined;
+  static const IconData alerts = Icons.notifications_none_rounded;
+  static const IconData properties = Icons.apartment_rounded;
+  static const IconData reports = Icons.assessment_outlined;
+  static const IconData more = Icons.more_horiz_rounded;
+  static const IconData chat = Icons.chat_bubble_outline_rounded;
+  static const IconData help = Icons.help_outline_rounded;
+
+  // ── Sesión y cuenta ────────────────────────────────────
+  static const IconData fingerprint = Icons.fingerprint_rounded;
+  static const IconData pin = Icons.pin_outlined;
+  static const IconData key = Icons.key_rounded;
+  static const IconData verified = Icons.verified_user_outlined;
+  static const IconData devices = Icons.devices_rounded;
+  static const IconData phoneAndroid = Icons.phone_android_rounded;
+  static const IconData phoneIphone = Icons.phone_iphone_rounded;
+  static const IconData web = Icons.language_rounded;
+  static const IconData company = Icons.business_rounded;
+  static const IconData swap = Icons.swap_horiz_rounded;
+  static const IconData offline = Icons.cloud_off_rounded;
+  static const IconData invitation = Icons.mark_email_read_outlined;
+
+  // ── Tarjetas de tarea ──────────────────────────────────
+  static const IconData notifications = Icons.notifications_none_rounded;
+  static const IconData time = Icons.schedule_rounded;
+  static const IconData property = Icons.home_outlined;
+  static const IconData incident = Icons.warning_amber_rounded;
+  static const IconData done = Icons.check_rounded;
 }
