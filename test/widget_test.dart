@@ -79,6 +79,14 @@ void main() {
       expect(find.text('Colaborador de limpieza · Costa Limpia S.A.'), findsOneWidget);
       expect(find.text('Cambiar de empresa'), findsNothing, reason: 'solo tiene una empresa');
 
+      await tester.scrollUntilVisible(
+        find.text('Cerrar sesión'),
+        200,
+        scrollable: find
+            .ancestor(of: find.text('Ana López'), matching: find.byType(Scrollable))
+            .first,
+      );
+      await tester.pump();
       await tester.tap(find.text('Cerrar sesión'));
       await settle(tester);
       await tester.tap(find.widgetWithText(DangerButton, 'Cerrar sesión'));
