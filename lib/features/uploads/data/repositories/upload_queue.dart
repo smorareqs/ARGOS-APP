@@ -218,7 +218,8 @@ class UploadQueue {
       await _fail(row, e.detail);
       return true;
     } on DioException catch (_) {
-      await _fail(row, 'Sin conexión. Se reintentará solo.');
+      // Sin red no es un error: vuelve a la cola y sigue al volver la red.
+      await _write(row.id, status: UploadStatus.queued);
       return false;
     } catch (e) {
       await _fail(row, 'No se pudo subir: $e');

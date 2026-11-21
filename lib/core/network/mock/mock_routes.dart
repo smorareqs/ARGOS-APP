@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:argos_app/core/network/connectivity_service.dart';
 import 'package:argos_app/core/network/mock/mock_backend.dart';
 import 'package:argos_app/features/auth/data/mock/auth_mock_routes.dart';
 import 'package:argos_app/features/tasks/data/mock/tasks_mock_routes.dart';
@@ -17,5 +20,12 @@ MockBackend mockBackend(Ref ref) {
   registerAuthMockRoutes(backend);
   registerFilesMockRoutes(backend);
   registerTasksMockRoutes(backend);
+
+  // El backend simulado vive en memoria: sin esto respondería aunque el
+  // teléfono esté en modo avión. Así se prueban los estados sin conexión.
+  final connectivity = ref.watch(connectivityServiceProvider);
+  unawaited(connectivity.hasConnection().then((up) => backend.offline = !up));
+  final sub = connectivity.watch().listen((up) => backend.offline = !up);
+  ref.onDispose(sub.cancel);
   return backend;
 }

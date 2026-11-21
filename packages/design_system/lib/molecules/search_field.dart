@@ -57,8 +57,9 @@ class _SearchFieldState extends State<SearchField> {
     setState(() {}); // muestra u oculta el botón de limpiar
     _timer?.cancel();
     final query = _controller.text.trim();
-    if (query.isNotEmpty && query.length < widget.minLength) return;
-    _timer = Timer(widget.debounce, () => _emit(query));
+    // Menos de [minLength] letras no busca: equivale a no tener búsqueda.
+    final effective = query.length < widget.minLength ? '' : query;
+    _timer = Timer(widget.debounce, () => _emit(effective));
   }
 
   void _emit(String query) {

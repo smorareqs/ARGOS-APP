@@ -67,18 +67,17 @@ void main() {
     ]));
   });
 
-  test('sin conexión queda con error y se recupera al reintentar', () async {
+  test('sin conexión queda en cola y sube al volver la red', () async {
     final queue = container.read(uploadQueueProvider);
     harness.backend.offline = true;
     final id = await enqueue(queue);
     await queue.process();
 
     var row = (await uploads(queue)).single;
-    expect(row.status, UploadStatus.error);
-    expect(row.attempts, 1);
+    expect(row.id, id);
+    expect(row.status, UploadStatus.queued);
 
     harness.backend.offline = false;
-    await queue.retry(id);
     await queue.process();
     row = (await uploads(queue)).single;
     expect(row.status, UploadStatus.done);

@@ -60,7 +60,13 @@ class PrimaryButton extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(label),
+                  Flexible(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                   if (trailingIcon != null) ...[
                     const SizedBox(width: CustomDimensions.spacingSm),
                     Icon(trailingIcon, size: CustomDimensions.iconSizeSm),

@@ -95,32 +95,45 @@ class LoginPanel extends StatelessWidget {
   }
 
   Widget _brandBlock() {
+    // Con el teclado abierto queda poco alto: la marca se achica en vez de
+    // desbordarse.
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 36),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Símbolo — la casa con greca, en blanco sobre el teal.
-          const ArgosLogo(showWordmark: false, size: 78, color: Colors.white),
-          const SizedBox(height: 26),
-          Padding(
-            padding: const EdgeInsets.only(left: 11),
-            child: Text(
-              'ARGOS',
-              style: CustomTypography.garamond(fontSize: 52, color: Colors.white)
-                  .copyWith(letterSpacing: 11),
-            ),
+      padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 12),
+      child: Center(
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Símbolo — la casa con greca, en blanco sobre el teal.
+              const ArgosLogo(
+                showWordmark: false,
+                size: 78,
+                color: Colors.white,
+              ),
+              const SizedBox(height: 26),
+              Padding(
+                padding: const EdgeInsets.only(left: 11),
+                child: Text(
+                  'ARGOS',
+                  style: CustomTypography.garamond(
+                    fontSize: 52,
+                    color: Colors.white,
+                  ).copyWith(letterSpacing: 11),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'LIMPIEZA & MANTENIMIENTO',
+                style: CustomTypography.verdana(
+                  fontSize: 11.5,
+                  color: Colors.white.withValues(alpha: 0.55),
+                  letterSpacing: 1.5,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            'LIMPIEZA & MANTENIMIENTO',
-            style: CustomTypography.verdana(
-              fontSize: 11.5,
-              color: Colors.white.withValues(alpha: 0.55),
-              letterSpacing: 1.5,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

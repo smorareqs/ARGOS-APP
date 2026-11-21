@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:argos_app/features/camera/presentation/pages/camera_page.dart';
+import 'package:argos_app/features/tasks/models/task_summary.dart';
+import 'package:argos_app/features/tasks/presentation/pages/task_detail_page.dart';
 import 'package:argos_app/features/uploads/models/pending_upload.dart';
 import 'package:argos_app/features/uploads/presentation/providers/upload_providers.dart';
 import 'package:design_system/design_system.dart';
@@ -27,6 +29,14 @@ class ComponentCatalogPage extends ConsumerStatefulWidget {
 }
 
 const _demoEntityType = 'demo_checklist_item';
+const _demoProperties = [
+  'Casa Laurel',
+  'Apartamento Olivo 3B',
+  'Villa Cedro',
+  'Loft Pino',
+  'Casa Roble',
+  'Cabaña Almendro',
+];
 const _demoEntityId = 'tender-cama';
 
 class _ComponentCatalogPageState extends ConsumerState<ComponentCatalogPage> {
@@ -94,13 +104,23 @@ class _ComponentCatalogPageState extends ConsumerState<ComponentCatalogPage> {
           onSearch: (q) => setState(() => _search = q),
         ),
         if (_search.isNotEmpty) ...[
-          const SizedBox(height: 8),
-          Text(
-            'Buscando "$_search"',
-            style: CustomTypography.bodySmall.copyWith(
-              color: CustomColors.textSecondary,
+          const SizedBox(height: 10),
+          for (final name in _demoProperties.where(
+            (p) => p.toLowerCase().contains(_search.toLowerCase()),
+          ))
+            AppListTile(icon: CustomIcons.property, title: name, showChevron: false),
+          if (!_demoProperties.any(
+            (p) => p.toLowerCase().contains(_search.toLowerCase()),
+          ))
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                'Sin resultados para "$_search". Toca la ✕ para limpiar.',
+                style: CustomTypography.bodySmall.copyWith(
+                  color: CustomColors.textSecondary,
+                ),
+              ),
             ),
-          ),
         ],
         const SizedBox(height: 12),
         FilterChips<String>(
@@ -260,68 +280,32 @@ class _ComponentCatalogPageState extends ConsumerState<ComponentCatalogPage> {
   }
 }
 
+/// El detalle real (B3) con una tarea de ejemplo.
 class _DetailDemo extends StatelessWidget {
   const _DetailDemo();
 
   @override
   Widget build(BuildContext context) {
-    return DetailScaffold(
-      overline: 'LAU-01 · Limpieza de salida',
-      title: 'Casa Laurel',
-      subtitle: 'Hoy · 10:00 a 13:00',
-      status: const StatusBadge(
-        label: 'Retrasada',
-        variant: StatusBadgeVariant.inProgress,
+    final today = DateTime.now();
+    return TaskDetailPage(
+      task: TaskSummary(
+        id: 'demo',
+        type: TaskType.checkoutReview,
+        status: TaskStatus.pending,
+        isLate: true,
+        scheduledDate: DateTime(today.year, today.month, today.day),
+        windowStart: '09:00',
+        windowEnd: '11:00',
+        notes: 'Check-out a las 08:40. Revisar la terraza y dejar toallas extra.',
+        checklistDone: 0,
+        checklistTotal: 18,
+        property: const TaskProperty(
+          id: 'demo',
+          code: 'LAU-01',
+          name: 'Casa Laurel',
+          address: 'Calle de los Laureles 14, Escazú',
+        ),
       ),
-      banner: const DetailBanner(message: 'Debió iniciar a las 09:00'),
-      onBack: () => Navigator.of(context).pop(),
-      footer: PrimaryButton(label: 'Iniciar limpieza', onPressed: () {}),
-      children: [
-        AppCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Dirección', style: CustomTypography.label),
-              const SizedBox(height: 6),
-              Text(
-                'Calle de los Laureles 14, Escazú',
-                style: CustomTypography.body,
-              ),
-              const SizedBox(height: 14),
-              TertiaryButton(label: 'Cómo llegar', onPressed: () {}),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-        AppCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Checklist', style: CustomTypography.label),
-              const SizedBox(height: 8),
-              Text('3 secciones · 18 ítems', style: CustomTypography.cardTitle),
-              const SizedBox(height: 12),
-              const ProgressBar(value: 0),
-            ],
-          ),
-        ),
-        const SizedBox(height: 24),
-        Text('Línea de tiempo', style: CustomTypography.sectionTitle),
-        const SizedBox(height: 16),
-        const TimelineItem(
-          title: 'Tarea asignada',
-          detail: 'Por Ana Rodríguez',
-          time: 'ayer',
-          isFirst: true,
-        ),
-        const TimelineItem(
-          title: 'Check-out del huésped',
-          time: '08:40',
-          icon: CustomIcons.reservations,
-          tone: TimelineTone.info,
-          isLast: true,
-        ),
-      ],
     );
   }
 }
