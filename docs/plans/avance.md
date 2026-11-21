@@ -299,4 +299,9 @@ Contratos que la web asume y que faltan en los fase0N.md (revisar al construir e
 
 * [B] Entorno de desarrollo de la app en Windows: Flutter 3.35.7 (la 3.50 no es compatible con Gradle 8.12 / AGP 8.9.1 del proyecto) y JDK 17 (el Java 25 de Android Studio no sirve para Gradle 8.12). Guía en [`../DESARROLLO.md`](../DESARROLLO.md).
 * [B] `.vscode/launch.json` con dos configuraciones (datos de prueba con `ARGOS_MOCK=true` y backend local) y `usesCleartextTraffic` solo en el manifest de debug para hablar con el backend local por http desde el emulador.
-* [B] Pendiente: 4 pruebas fallan con `flutter test` (3 del flujo de login en `test/widget_test.dart` y 1 de `test/itinerary_page_test.dart` que depende de la fecha).
+* [B] Pruebas en verde (63 de la app y 9 del design system). EB Garamond empaquetada en `packages/design_system/assets/fonts` (OFL): la app ya no descarga fuentes.
+* [B] Design system de fases 1 y 2 completo: NumberStepper, AppCheckbox (32 dp), PhotoThumb, SearchField, FilterChips, PhotoGrid, ChecklistItemRow, BeforeAfterPair, QuantityRow, TimelineItem y DetailScaffold (+ DetailBanner). Catálogo para verlos en Perfil › "Catálogo de componentes" (solo con `ARGOS_MOCK` o en depuración).
+* [B] Cámara integrada (B5): obturador de 72 dp, flash, cambio de cámara, miniaturas y guía "antes". Fotos a 1600 px, JPEG 80, marca de agua con fecha, hora y código de propiedad.
+* [B] Cola `pending_uploads` (Drift v3) con presign → subida → confirm (fase01 §3.8), reintento con espera creciente (15 s a 30 min), y rutas simuladas de `/files`. Por ahora sube con la app abierta; falta decidir el trabajo en segundo plano (`workmanager`) por la rotación del refresh token.
+* [B] Contrato de auth revisado contra `internal/api/v1/auth.go`: coincide; se corrigió `device.name` (ya no se manda `null`).
+* [B] Para A: la app acepta en `presign-upload` tanto `{file_id, upload_url, method: "PUT", headers}` como un POST prefirmado de S3 con `fields`. Falta en el backend: `/files/*`, `/auth/sessions`, `/auth/password/change` e invitaciones (la app los usa del mock).

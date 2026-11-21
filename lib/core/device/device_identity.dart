@@ -25,7 +25,14 @@ class DeviceIdentity {
   /// Nombre legible, p. ej. "Samsung SM-A245M" o "iPhone de Ana".
   final String? name;
 
-  Map<String, dynamic> toJson() => {'id': id, 'name': name, 'platform': platform};
+  /// El backend define `name` como texto opcional de hasta 128 caracteres:
+  /// si no hay nombre se omite (un `null` lo rechazaría con 422).
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    if (name != null && name!.trim().isNotEmpty)
+      'name': name!.trim().length > 128 ? name!.trim().substring(0, 128) : name!.trim(),
+    'platform': platform,
+  };
 }
 
 class DeviceIdentityService {
