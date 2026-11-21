@@ -1,3 +1,4 @@
+import 'package:design_system/tokens/custom_colors.dart';
 import 'package:design_system/tokens/custom_dimensions.dart';
 import 'package:design_system/tokens/custom_typography.dart';
 import 'package:flutter/material.dart';
@@ -18,6 +19,7 @@ class DarkTextField extends StatelessWidget {
     this.onChanged,
     this.onSubmitted,
     this.validator,
+    this.autofillHints,
   });
 
   final TextEditingController? controller;
@@ -30,6 +32,7 @@ class DarkTextField extends StatelessWidget {
   final ValueChanged<String>? onChanged;
   final ValueChanged<String>? onSubmitted;
   final String? Function(String?)? validator;
+  final Iterable<String>? autofillHints;
 
   @override
   Widget build(BuildContext context) {
@@ -42,6 +45,7 @@ class DarkTextField extends StatelessWidget {
       onChanged: onChanged,
       onFieldSubmitted: onSubmitted,
       validator: validator,
+      autofillHints: autofillHints,
       cursorColor: white,
       style: CustomTypography.verdana(fontSize: 15, color: white),
       decoration: InputDecoration(
@@ -65,10 +69,10 @@ class DarkTextField extends StatelessWidget {
         focusedBorder: _border(white.withValues(alpha: 0.45), width: 1.4),
         errorStyle: CustomTypography.verdana(
           fontSize: 11,
-          color: const Color(0xFFE3A99A),
+          color: CustomColors.errorOnDark,
         ),
-        errorBorder: _border(const Color(0xFFC97A6E)),
-        focusedErrorBorder: _border(const Color(0xFFC97A6E), width: 1.4),
+        errorBorder: _border(CustomColors.errorBorderOnDark),
+        focusedErrorBorder: _border(CustomColors.errorBorderOnDark, width: 1.4),
       ),
     );
   }

@@ -23,15 +23,15 @@
    tablas de eventos y bitácoras solo admiten `INSERT`.
 7. Extensiones requeridas: `btree_gist` (exclusiones de solapamiento), `citext` (correo
    sin distinguir mayúsculas). `gen_random_uuid()` es nativo desde Postgres 13.
-8. Nombres de constraints e índices por la convención de `NAMING_CONVENTION` en
-   `src/core/database.py` (`pk_`, `fk_`, `uq_`, `ck_`, `ix_`).
+8. Nombres de constraints e índices según la convención de `BACKEND/migrations/README.md`
+   (`pk_`, `fk_`, `uq_`, `ck_`, `ix_`), la misma que generaba Alembic.
 
 ## 2. Migraciones: qué crea cada una
 
 | Entorno | Revisión | Crea o modifica | Fase |
 | --- | --- | --- | --- |
 | shared | `0001_initial` (existente) | `tenants`, `users` | — |
-| shared | `0002_identity` | modifica `tenants` y `users`; crea `roles`, `role_permissions`, `memberships`, `refresh_tokens`, `one_time_tokens`, `invitations`, `device_tokens`, `jobs`, `platform_audit_log`; migra datos; crea schema `tenant_template` | 1 |
+| shared | `0002_identity` | modifica `tenants` y `users`; crea `roles`, `role_permissions`, `memberships`, `refresh_tokens`, `one_time_tokens`, `invitations`, `device_tokens`, `jobs`, `platform_audit_log`; migra datos | 1 |
 | shared | `0003_billing` | `plans`, `subscriptions`, `invoices`, `payments`, `payment_events`, `api_keys` | 6 |
 | tenant | `0001_tenant_base` | `files`, `audit_log` | 1 |
 | tenant | `0002_properties` (A) | `buildings`, `properties`, `property_owners`, `property_assignments`, `employees`, `employee_schedules`, `checklist_templates`, `checklist_template_items` | 2 |
@@ -44,11 +44,13 @@
 | tenant | `0009_attendance_metrics` (B) | `attendance_records`, `performance_snapshots`, `goals`, `incentive_awards` | 5 |
 | tenant | `0010_chat_locks` (B) | `conversations`, `conversation_participants`, `messages`, `lock_devices`, `lock_access_codes` | 6 |
 
-(A) y (B) indican la persona dueña según [reparto.md](reparto.md). La de B en cada fase
-apunta con `down_revision` a la de A de la misma fase.
+(A) y (B) indican la persona dueña según [reparto.md](reparto.md). Las migraciones se
+aplican por número; la de B en cada fase lleva el número siguiente a la de A de la misma
+fase.
 
-Orden de aplicación en cada despliegue: `shared` a head, luego `tenant` a head para
-todos los schemas. Comandos y `env.py` en [fase01.md §3.1](fase01.md).
+Orden de aplicación en cada despliegue: `argos migrate up` aplica `shared` y luego
+`tenant` en todos los schemas. Formato y comandos en [fase01.md §3.1](fase01.md) y en
+`BACKEND/migrations/README.md`.
 
 ## 3. Schema `shared`
 
@@ -264,10 +266,10 @@ erDiagram
 
 ## 9. Semillas (seeds)
 
-* `scripts/seed.py platform-admin`: crea el primer usuario de plataforma.
-* `scripts/seed.py demo-tenant`: crea tenant `demo` con un usuario por rol, dos edificios,
+* `argos seed platform-admin`: crea el primer usuario de plataforma (ya existe).
+* `argos seed demo-tenant`: crea tenant `demo` con un usuario por rol, dos edificios,
   seis propiedades con plantilla, inventario básico, tareas de la semana, dos activos con
   preventivo, tres reservas (una por canal), un área común y dos parqueos. Es el dataset
   de las pruebas manuales de app y web.
-* Roles por defecto: se siembran desde `src/modules/authz/default_roles.py` al crear
+* Roles por defecto: se siembran desde `internal/modules/authz/default_roles.go` al crear
   cualquier tenant.

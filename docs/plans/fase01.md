@@ -23,96 +23,75 @@ Fuera de esta fase: cualquier tabla de negocio (propiedades, tareas, etc.).
 | Tema | Decisión |
 | --- | --- |
 | Aislamiento BD | Schema por tenant. `SET LOCAL search_path` por transacción (no `SET` de sesión). |
-| Modelos ORM | Una sola `Base`/`MetaData`. Tablas globales con `schema="shared"`; tablas de tenant **sin schema** (se resuelven por `search_path`). |
-| Migraciones | Dos entornos Alembic: `shared` y `tenant`, cada uno con su carpeta de versiones y su tabla `alembic_version`. Un schema `tenant_template` siempre migrado a head sirve para autogenerar. |
+| Modelos y SQL | Sin ORM: structs con tags `db` y SQL explícito (pgx). Tablas globales siempre calificadas (`shared.users`); tablas de tenant **sin schema** (se resuelven por `search_path`). |
+| Migraciones | Dos conjuntos SQL embebidos en el binario: `migrations/shared` y `migrations/tenant`, cada schema con su tabla `schema_migrations`. Se escriben a mano (no hay autogeneración, por eso no hace falta un schema `tenant_template`). Ya implementado. |
 | Permisos | Enum en código (`Permission`). Roles en BD (`shared.roles`) con `role_permissions`. |
 | Token | JWT HS256. Access 15 min con claims `sub`, `tid` (tenant), `mid` (membership), `rk` (role key), `pv` (permissions version). Refresh opaco (random 256 bits), guardado hasheado (SHA-256), rotativo. |
 | Resolución de permisos | En cada petición: se cargan de BD los permisos del rol (cache en memoria por proceso, TTL 60 s, invalidado por `pv`). |
 | Huéspedes | No usan `shared.users`. Tienen token propio con claim `typ=guest` (fase 4). El middleware de esta fase ya contempla el tipo. |
 | Cola de trabajos | Tabla `shared.jobs` + worker con `SELECT ... FOR UPDATE SKIP LOCKED`. Sin Redis. |
-| Correo | Amazon SES vía `aioboto3`. Plantillas Jinja2 en `src/core/mail/templates`. |
-| Archivos | Amazon S3 vía `aioboto3`. Un bucket por ambiente. En local: LocalStack o MinIO en docker-compose (solo desarrollo). |
-| 2FA | TOTP (`pyotp`), secreto cifrado con clave `ARGOS_FIELD_ENCRYPTION_KEY` (Fernet). |
-| Cifrado de campos | Utilidad `EncryptedString` (SQLAlchemy TypeDecorator con Fernet) para totp_secret y, en fase 2, información de acceso a propiedades. |
+| Correo | Amazon SES vía AWS SDK for Go v2 (`sesv2`). Plantillas `html/template` embebidas en `internal/core/mail/templates`. |
+| Archivos | Amazon S3 vía AWS SDK for Go v2 (`s3` y `s3.PresignClient`). Un bucket por ambiente. En local: LocalStack o MinIO en docker-compose (solo desarrollo). |
+| 2FA | TOTP (`github.com/pquerna/otp`), secreto cifrado con clave `ARGOS_FIELD_ENCRYPTION_KEY` (AES-256-GCM). |
+| Cifrado de campos | Tipo `EncryptedString` en `internal/core/security` (implementa `sql.Scanner` y `driver.Valuer`, AES-256-GCM de la biblioteca estándar) para totp_secret y, en fase 2, información de acceso a propiedades. |
 
 ## 3. Backend
 
-### 3.1 Reestructura de Alembic
+### 3.1 Migraciones `shared` y `tenant`
 
-Estructura objetivo:
+**Ya implementado** en la migración del backend a Go (2026-10-22); esta fase solo agrega
+archivos. Detalle del formato y reglas en `BACKEND/migrations/README.md`.
 
 ```
-BACKEND/
-├── alembic.ini                 # secciones [shared] y [tenant]
-├── migrations/
-│   ├── shared/
-│   │   ├── env.py
-│   │   ├── script.py.mako
-│   │   └── versions/
-│   │       ├── 0001_initial.py            (existente, renombrada: 3f1d8a233b4f)
-│   │       └── 0002_identity.py
-│   └── tenant/
-│       ├── env.py
-│       ├── script.py.mako
-│       └── versions/
-│           └── 0001_tenant_base.py
+BACKEND/migrations/
+├── migrations.go                 # embebe shared/ y tenant/ en el binario
+├── shared/
+│   ├── 0001_initial.sql          (existente; adopta sin cambios la BD creada por Alembic)
+│   └── 0002_identity.sql | .go   (esta fase, ver 3.4)
+└── tenant/
+    └── 0001_tenant_base.sql      (esta fase)
 ```
 
-`alembic.ini`:
+* Motor en `internal/core/migrate`: cada schema guarda sus versiones en su propia tabla
+  `"<schema>".schema_migrations`; las migraciones de tenant se escriben sin schema y el
+  motor fija `search_path` al schema del tenant seguido de `shared`.
+* Cada schema se migra en una transacción, con bloqueo consultivo para que dos procesos
+  no migren el mismo schema a la vez.
+* `migrate tenant` recorre todos los tenants de `shared.tenants` (activos o no, para que
+  ningún schema quede desfasado al reactivarlo) o uno con `-tenant <slug>`.
 
-```ini
-[shared]
-script_location = migrations/shared
-version_table = alembic_version
-[tenant]
-script_location = migrations/tenant
-```
-
-`migrations/shared/env.py` (igual al actual): `include_schemas=True`,
-`version_table_schema="shared"`, `include_object` acepta solo objetos con
-`schema == "shared"`.
-
-`migrations/tenant/env.py`:
-
-1. Lee `-x tenant=<slug|all>` (por defecto `all`).
-2. Resuelve la lista de schemas: si `all`, `SELECT schema_name FROM shared.tenants WHERE is_active`
-   más `tenant_template`; si es un slug, solo ese schema.
-3. Por cada schema: `SET search_path TO "<schema>", "shared"`, `commit`,
-   `connection.dialect.default_schema_name = "<schema>"`, `context.configure(...)` con
-   `include_schemas=False`, `version_table_schema="<schema>"`, `include_object` que
-   acepta solo objetos con `schema is None`; después `context.run_migrations()`.
-4. `revision --autogenerate` en el entorno tenant se ejecuta siempre con
-   `-x tenant=template` (schema `tenant_template`), nunca contra un tenant real.
-
-Comandos oficiales (documentar en README del backend):
+Comandos oficiales (ya documentados en el README del backend):
 
 ```bash
-poetry run alembic -n shared upgrade head
-poetry run alembic -n tenant upgrade head                 # todos los tenants + template
-poetry run alembic -n tenant upgrade head -x tenant=garrent
-poetry run alembic -n shared revision --autogenerate -m "..."
-poetry run alembic -n tenant revision --autogenerate -m "..." -x tenant=template
+argos migrate up                              # shared y después todos los tenants
+argos migrate shared up|down|status
+argos migrate tenant up|status                # todos los tenants
+argos migrate tenant up -tenant garrent       # un solo tenant
+argos migrate tenant down -tenant <slug|all>  # down exige -tenant explícito
 ```
 
 Reglas:
 
-* Orden de despliegue: `shared` primero, luego `tenant`.
-* El worker y la API se niegan a arrancar si `shared` no está en head
-  (chequeo en `lifespan`). Si un tenant no está en head se marca `is_active=false`
-  temporalmente y se registra en log (nunca se opera con un schema desfasado).
-* CI: job que levanta Postgres, aplica ambas cabezas en una BD vacía, crea dos tenants y
-  corre `alembic -n tenant check -x tenant=template` para detectar drift entre modelos y
+* Orden de despliegue: `shared` primero, luego `tenant` (`argos migrate up` lo hace).
+* La API ya se niega a arrancar si `shared` tiene migraciones pendientes. Falta en esta
+  fase: el mismo chequeo en el worker, y que un tenant con migraciones pendientes se
+  marque `is_active=false` temporalmente y se registre en log (nunca se opera con un
+  schema desfasado).
+* CI: las pruebas de integración aplican `shared` en una BD vacía (Testcontainers). Esta
+  fase agrega una prueba que aplica también `tenant`, crea dos tenants y revierte con
+  `down`. No hay autogeneración, así que no existe la detección de drift entre modelos y
   migraciones.
 
 ### 3.2 Alta de tenant (provisioning)
 
-`TenantService.create_tenant` pasa a ejecutar, en este orden y en una sola operación
-lógica (si algo falla se elimina el schema):
+`tenants.Service.CreateTenant` ya ejecuta los pasos 1 a 3 en **una sola transacción**
+(si algo falla no queda ni el registro ni el schema). Esta fase agrega los pasos 4 a 6
+dentro de la misma transacción:
 
 1. Insertar `shared.tenants`.
-2. `CREATE SCHEMA "tenant_<slug>"`.
-3. Ejecutar migraciones tenant a head para ese schema (`alembic.command.upgrade` en un
-   hilo con engine síncrono, `-x tenant=<slug>`).
+2. `CREATE SCHEMA "tenant_<slug>"` (falla si ya existe: nunca se adopta un schema previo).
+3. Aplicar las migraciones de tenant a ese schema (`migrate.Set.Up` con la misma
+   transacción).
 4. Sembrar roles por defecto (`shared.roles` + `shared.role_permissions`) para el tenant
    a partir de la matriz del PRD sección 3.4.
 5. Crear la membresía `admin` para el usuario indicado (existente o invitado por correo).
@@ -123,7 +102,7 @@ lógica (si algo falla se elimina el schema):
 Convenciones para todas las tablas del proyecto:
 
 * `id UUID PK DEFAULT gen_random_uuid()`, `created_at`, `updated_at` (timestamptz,
-  `now()`), vía mixins existentes.
+  `now()`), declaradas en cada migración (no hay ORM).
 * Nombres en inglés, snake_case, plural.
 * Borrado lógico solo donde se indique (`deleted_at`).
 * Enumeraciones como `VARCHAR` con `CHECK` (no tipos ENUM de Postgres, para simplificar
@@ -154,7 +133,7 @@ Convenciones para todas las tablas del proyecto:
 | phone | varchar(32) null | nuevo |
 | is_active | bool | existente |
 | is_platform_admin | bool default false | nuevo; sustituye a `role = platform_admin` |
-| totp_secret | varchar(255) null | cifrado (Fernet) |
+| totp_secret | varchar(255) null | cifrado (AES-256-GCM, ver §2) |
 | totp_enabled | bool default false | |
 | password_changed_at | timestamptz null | |
 | last_login_at | timestamptz null | |
@@ -202,6 +181,7 @@ Restricciones: `UNIQUE (user_id, tenant_id)`; `CHECK` en service de que `role.te
 | Columna | Tipo | Notas |
 | --- | --- | --- |
 | user_id | uuid FK users ON DELETE CASCADE | |
+| tenant_id | uuid FK tenants ON DELETE CASCADE null | empresa activa de la sesión (null = modo plataforma); la usa `/auth/refresh` para emitir el access token del mismo tenant |
 | token_hash | char(64) unique | SHA-256 del token opaco |
 | family_id | uuid | para detectar reutilización tras rotación |
 | device_id | varchar(128) | generado por el cliente y persistido |
@@ -304,17 +284,18 @@ Pasos en `upgrade()`, en este orden:
    `password_changed_at`, `last_login_at`; hacer `hashed_password` nullable.
 3. Crear `roles`, `role_permissions`, `memberships`, `refresh_tokens`,
    `one_time_tokens`, `invitations`, `device_tokens`, `jobs`, `platform_audit_log`.
-4. **Migración de datos** (SQL dentro de la misma revisión):
+4. **Migración de datos** (dentro de la misma revisión):
    * `UPDATE shared.users SET is_platform_admin = true WHERE role = 'platform_admin'`.
-   * Por cada tenant existente: insertar los siete roles por defecto con sus permisos
-     (la matriz vive en `src/modules/authz/default_roles.py`; la migración importa la
-     misma constante para no duplicarla).
+   * Por cada tenant existente: insertar los siete roles por defecto con sus permisos.
+     La matriz vive solo en `internal/modules/authz/default_roles.go`; para no duplicarla
+     en SQL, `0002_identity` se escribe como migración Go. El motor hoy solo lee `.sql`:
+     en esta fase se le agrega el registro de migraciones Go (versión + función que recibe
+     la transacción), aplicadas en el mismo orden y con la misma tabla de versiones.
    * Por cada usuario con `tenant_id`: insertar membresía con el rol cuyo `key` coincide
      con `users.role` (`employee` → `cleaner`), `status='active'`, `joined_at=created_at`.
 5. Eliminar columnas `users.role`, `users.tenant_id`, `users.is_owner` y su índice.
-6. Crear el schema `tenant_template` si no existe (`CREATE SCHEMA IF NOT EXISTS`).
 
-`downgrade()` invierte los pasos y reconstruye `role`/`tenant_id` a partir de la primera
+La sección down invierte los pasos y reconstruye `role`/`tenant_id` a partir de la primera
 membresía activa (documentar que es una reversión con pérdida si había varias).
 
 ### 3.5 Modelo de datos: schema de tenant (migración `tenant/0001_tenant_base`)
@@ -363,35 +344,39 @@ Solo inserciones. Índices en `created_at`, `(entity, entity_id)`, `actor_user_i
 ### 3.6 Módulo `authz` (nuevo) y cambios en `auth`
 
 ```
-src/modules/authz/
-├── permissions.py     # class Permission(StrEnum) con todo el catálogo del PRD 3.3
-├── default_roles.py   # DEFAULT_ROLES: dict[role_key, set[Permission]] = matriz PRD 3.4
-├── models.py          # Role, RolePermission, Membership
-├── repository.py
-├── service.py         # crear/editar roles, sembrar defaults, resolver permisos con cache
-└── schemas.py
+internal/modules/authz/
+├── permissions.go     # type Permission string + constantes con todo el catálogo del PRD 3.3
+├── default_roles.go   # DefaultRoles: map[string][]Permission = matriz PRD 3.4
+├── model.go           # Role, RolePermission, Membership
+├── repository.go
+├── service.go         # crear/editar roles, sembrar defaults, resolver permisos con cache
+├── schemas.go
+└── errors.go
 ```
 
-`src/api/dependencies.py`:
+`internal/api/dependencies.go` (`Guard`):
 
-* `get_session`: abre transacción explícita y hace `SET LOCAL search_path TO "shared"`.
-* `get_current_principal`: valida JWT, distingue `typ` (`user` | `guest`), carga usuario
-  y membresía, verifica `status='active'`, verifica `tenant.is_active`, ejecuta
-  `SET LOCAL search_path TO "<tenant_schema>", "shared"`, resuelve permisos del rol y
-  devuelve `Principal(user, tenant, membership, role_key, permissions: frozenset)`.
-* `require_permission(*perms)`: dependencia; 403 si falta alguno. Nunca se usa
-  `require_role`: se elimina `roles.py` y `has_at_least`.
-* `require_platform_admin`.
+* Transacciones: ya resuelto. `database.InTx` hace `SET LOCAL search_path` en cada
+  transacción con el schema que el middleware deja en el contexto
+  (`database.WithTenantSchema`); sin tenant, solo `"shared"`.
+* `Authenticated` pasa a resolver el principal: valida JWT, distingue `typ` (`user` |
+  `guest`), carga usuario y membresía, verifica `status='active'`, verifica
+  `tenant.is_active`, marca el contexto con el schema del tenant, resuelve permisos del
+  rol y deja en el contexto `Principal{User, Tenant, Membership, RoleKey, Permissions}`
+  (hoy deja solo el usuario).
+* `RequirePermission(perms...)`: middleware; 403 si falta alguno. Se elimina
+  `RequireRole` junto con `auth/roles.go` y `HasAtLeast`.
+* `RequirePlatformAdmin`.
 * `ScopeResolver`: helper inyectable que expone `property_ids_for(principal)` y similares
   (se completa en fase 2). Los repositorios de negocio reciben el scope y filtran siempre.
 
 Reglas de código obligatorias (añadir a `BACKEND/docs/ARCHITECTURE.md`):
 
 * Todo endpoint bajo `/api/v1` excepto `auth/*`, `health` y `public/*` declara
-  `Depends(require_permission(...))`.
-* Todo repositorio de tenant recibe `scope` y lo aplica en `WHERE`; un `get_by_id` fuera
-  del scope devuelve `None` (el endpoint responde 404).
-* Está prohibido construir claves S3 fuera de `StorageService.build_key(tenant_id, ...)`.
+  `Middlewares: guard.RequirePermission(...)` (o su grupo lo aplica con `UseMiddleware`).
+* Todo repositorio de tenant recibe `scope` y lo aplica en `WHERE`; un `GetByID` fuera
+  del scope devuelve `nil` (el endpoint responde 404).
+* Está prohibido construir claves S3 fuera de `storage.Service.BuildKey(tenantID, ...)`.
 
 ### 3.7 Autenticación: endpoints
 
@@ -412,7 +397,7 @@ Reglas de código obligatorias (añadir a `BACKEND/docs/ARCHITECTURE.md`):
 | `GET/PATCH /tenants/{id}/members`, `PATCH .../members/{id}/role`, `.../suspend` | `users.manage`. |
 | `GET/PATCH /tenants/{id}/settings` | `tenant.settings`. |
 | `POST /files/presign-upload`, `POST /files/{id}/confirm`, `GET /files/{id}/url` | ver 3.8. |
-| `POST /platform/tenants`, `GET /platform/tenants`, `PATCH .../{id}` | `require_platform_admin`. |
+| `POST /platform/tenants`, `GET /platform/tenants`, `PATCH .../{id}` | `RequirePlatformAdmin`. |
 
 Si un usuario tiene `is_platform_admin` y además membresías, el login lo trata como
 usuario normal; el modo plataforma se activa con `POST /auth/select-tenant`
@@ -421,17 +406,84 @@ enviando `platform: true`.
 Tiempos: access 15 min, refresh 60 días (móvil) / 30 días (web), selección 5 min.
 Bloqueo por fuerza bruta: 10 intentos fallidos en 15 min por correo+IP → 429.
 
+#### 3.7.1 Contrato JSON de autenticación
+
+Lo que la app consume desde la fase 1; la app lo implementa contra un mock HTTP
+(`--dart-define=ARGOS_MOCK=true`) hasta que el backend esté en `main`. Si el backend
+cambia algo, se actualiza esta sección en el mismo PR.
+
+Convenciones:
+
+* JSON en snake_case; fechas ISO 8601 en UTC.
+* Errores en RFC 9457 (`application/problem+json`), como el backend actual: mensaje
+  para el usuario en `detail`; en 422, cada campo en `errors[]` con `location`.
+* `device` = `{"id": "<uuid generado y guardado por el cliente>", "name": "Pixel 7",
+  "platform": "android" | "ios" | "web"}`.
+* El access token lleva además el claim `sid` (id de la sesión, la familia del refresh)
+  para marcar la sesión actual en `/auth/sessions`.
+* En endpoints autenticados, 401 significa siempre "token inválido o vencido": la app
+  renueva el token una vez y reintenta. Los errores de negocio usan 403, 404 o 422.
+
+**Respuesta de sesión** (login, select-tenant, aceptar invitación):
+
+```json
+{
+  "status": "authenticated",
+  "access_token": "…",
+  "refresh_token": "…",
+  "expires_in": 900,
+  "memberships": [
+    {"tenant_id": "…", "tenant_name": "Garrent", "tenant_logo_url": null,
+     "role_key": "cleaner", "role_name": "Colaborador de limpieza"}
+  ]
+}
+```
+
+Con varias membresías activas: `"status": "select_tenant"`, `"selection_token"` (5 min)
+y `memberships`, sin tokens.
+
+| Endpoint | Cuerpo | Respuestas |
+| --- | --- | --- |
+| `POST /auth/login` | `email`, `password`, `totp_code` (opcional), `device` | 200 respuesta de sesión · 401 credenciales incorrectas o código TOTP incorrecto · 403 cuenta sin membresías activas · 428 falta el código TOTP · 429 bloqueo, con header `Retry-After` en segundos |
+| `POST /auth/select-tenant` | `tenant_id` y además `selection_token` + `device` (tras el login) o `refresh_token` (cambio de empresa con sesión abierta) | 200 respuesta de sesión · 401 token vencido · 404 sin membresía en ese tenant |
+| `POST /auth/refresh` | `refresh_token`, `device_id` | 200 `{access_token, refresh_token, expires_in}` · 401 vencido, revocado o reutilizado |
+| `POST /auth/logout` | `refresh_token` | 204, también si ya estaba revocado |
+| `GET /auth/me` | — | 200, ver abajo |
+| `GET /auth/sessions` | — | 200 `[{id, device_name, platform, last_used_at, created_at, current}]` |
+| `DELETE /auth/sessions/{id}` | — | 204 · 404 si no es una sesión del usuario |
+| `DELETE /auth/sessions` | — | 204; revoca todas menos la actual |
+| `POST /auth/password/forgot` | `email` | 202 siempre (no revela si el correo existe) |
+| `POST /auth/password/change` | `current_password`, `new_password` | 204 · 422 contraseña actual incorrecta o nueva inválida |
+| `GET /auth/invitations/{token}` | — | 200 `{tenant_name, role_name, email, user_exists}` · 404 vencida, usada o revocada |
+| `POST /auth/invitations/accept` | `token`, `password` (la actual si `user_exists`, la nueva si no), `full_name` (solo si no existe), `device` | Igual que el login |
+
+`GET /auth/me` (en modo plataforma `tenant` y `role` son `null`, y `user.is_platform_admin`
+es `true`):
+
+```json
+{
+  "user": {"id": "…", "email": "ana@garrent.gt", "full_name": "Ana López", "totp_enabled": false},
+  "tenant": {"id": "…", "name": "Garrent", "logo_url": null, "timezone": "America/Guatemala",
+             "currency": "GTQ", "features": {"reservations": true, "parking": false,
+             "shared_areas": true, "guest_chat": false}},
+  "role": {"key": "cleaner", "name": "Colaborador de limpieza"},
+  "permissions": ["tasks.read", "tasks.execute", "inventory.read"],
+  "memberships": [{"tenant_id": "…", "tenant_name": "Garrent", "tenant_logo_url": null,
+                   "role_key": "cleaner", "role_name": "Colaborador de limpieza"}]
+}
+```
+
 ### 3.8 Servicio de archivos (S3)
 
-`src/core/storage.py` → `StorageService`:
+`internal/core/storage` → `storage.Service`:
 
-* `build_key(tenant_id, module, kind, filename) -> "tenants/{tenant_id}/{module}/{yyyy}/{mm}/{uuid}.{ext}"`.
-* `presign_upload(key, content_type, max_bytes)`: POST prefirmado con condición de
+* `BuildKey(tenantID, module, kind, filename) -> "tenants/{tenant_id}/{module}/{yyyy}/{mm}/{uuid}.{ext}"`.
+* `PresignUpload(ctx, key, contentType, maxBytes)`: POST prefirmado con condición de
   tamaño y content-type; 15 min.
-* `presign_download(key)`: 5 min.
-* `delete(key)`.
-* `assert_tenant_key(key, tenant_id)`: lanza si el prefijo no coincide. Se llama antes de
-  firmar cualquier descarga.
+* `PresignDownload(ctx, key)`: 5 min.
+* `Delete(ctx, key)`.
+* `AssertTenantKey(key, tenantID)`: devuelve error si el prefijo no coincide. Se llama
+  antes de firmar cualquier descarga.
 
 Flujo de subida: el cliente pide `presign-upload` con `module`, `kind`, `entity`,
 `content_type`, `size` → el backend valida permiso sobre la entidad, crea `files`
@@ -445,17 +497,19 @@ versionado desactivado, regla de ciclo de vida para abortar multipart huérfanos
 
 ### 3.9 Cola de trabajos y correo
 
-* `src/core/jobs/`: `enqueue(type, payload, tenant_id=None, scheduled_at=None,
-  dedupe_key=None)`, `registry` de handlers, `worker.py` (proceso `python -m src.worker`,
-  concurrencia configurable, polling 1 s con `LISTEN jobs_new` para despertar).
-* `src/core/mail/`: `MailService.send(to, template, context)` con SES; en `local` y
-  `testing` escribe el correo a log en lugar de enviarlo.
+* `internal/core/jobs`: `Enqueue(ctx, q, Job{Type, Payload, TenantID, ScheduledAt,
+  DedupeKey})` (recibe la transacción del servicio, así el trabajo se encola junto con el
+  cambio que lo origina), registro de handlers y worker (subcomando `argos worker` en
+  `cmd/argos/worker.go`, concurrencia configurable con goroutines, polling 1 s con
+  `LISTEN jobs_new` para despertar).
+* `internal/core/mail`: `mail.Service.Send(ctx, to, template, data)` con SES; en `local`
+  y `testing` escribe el correo a log en lugar de enviarlo.
 * Handlers de esta fase: `send_email`, `storage_cleanup`.
 * Nuevas variables: `ARGOS_AWS_REGION`, `ARGOS_S3_BUCKET`, `ARGOS_S3_ENDPOINT_URL`
   (solo local), `ARGOS_SES_FROM`, `ARGOS_FIELD_ENCRYPTION_KEY`, `ARGOS_APP_BASE_URL`,
   `ARGOS_WEB_BASE_URL`, `ARGOS_WORKER_CONCURRENCY`. Credenciales AWS por el mecanismo
   estándar del SDK (rol IAM en despliegue; variables en local).
-* `docker-compose.yml`: agregar servicio `worker` (misma imagen, comando distinto) y
+* `docker-compose.yml`: agregar servicio `worker` (misma imagen, comando `argos worker`) y
   `localstack` (S3 + SES simulados) solo para desarrollo.
 
 ### 3.10 Pruebas obligatorias
@@ -469,7 +523,7 @@ cleaner cada uno:
 4. Refresh reutilizado revoca la familia completa.
 5. `presign-download` de una clave con prefijo de otro tenant falla (404) aunque el
    `file_id` exista.
-6. Migraciones: shared + tenant aplican en BD vacía; `alembic check` sin diff.
+6. Migraciones: shared + tenant aplican en BD vacía y `down` revierte cada una.
 7. Provisioning de tenant deja el schema en head y los siete roles sembrados.
 8. Usuario con dos membresías recibe `selection_token` y puede cambiar de tenant; los
    datos vistos cambian con el tenant.
@@ -477,11 +531,11 @@ cleaner cada uno:
 
 ### 3.11 Limpieza de código existente
 
-* Eliminar `src/modules/auth/roles.py` y todo uso de `Role`/`has_at_least`.
-* Eliminar `scripts/seed_platform_admin.py` y reemplazar por `scripts/seed.py` con
-  subcomandos: `platform-admin`, `demo-tenant` (crea tenant demo con usuarios de cada rol).
-* Actualizar `README.md` y `docs/ARCHITECTURE.md` del backend con las reglas de 3.6 y los
-  comandos de 3.1.
+* Eliminar `internal/modules/auth/roles.go`, `Guard.RequireRole` y todo uso de
+  `Role`/`HasAtLeast`.
+* `argos seed platform-admin` ya existe (`cmd/argos/seed.go`); agregar el subcomando
+  `demo-tenant` (crea tenant demo con usuarios de cada rol).
+* Actualizar `README.md` y `docs/ARCHITECTURE.md` del backend con las reglas de 3.6.
 
 ## 4. App móvil (Flutter)
 
@@ -554,4 +608,4 @@ marcador "próximamente" para poder probar la navegación por rol.
   biometría en el segundo arranque y ve solo las pestañas de su rol.
 * Un usuario con membresía en dos empresas cambia entre ellas en app y web.
 * Platform admin crea un tenant desde la web y el schema queda migrado y con roles.
-* Ningún endpoint de negocio existe aún sin `require_permission`.
+* Ningún endpoint de negocio existe aún sin `RequirePermission`.

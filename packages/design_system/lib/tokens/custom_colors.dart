@@ -77,4 +77,38 @@ abstract final class CustomColors {
 
   /// Color de elementos deshabilitados.
   static const Color disabled = Color(0xFFB0B0A6);
+
+  // ── Estados (insignias, avisos) ────────────────────────
+  // Ref: ux-ui.md §2.2 · tokens nuevos compartidos con la web.
+
+  /// Texto y borde de advertencia (retraso, vencido, pendiente de acuse).
+  static const Color warning = Color(0xFF9A6722);
+
+  /// Fondo de insignia de advertencia.
+  static const Color warningSoft = Color(0xFFF6E7D2);
+
+  /// Fondo de insignia de éxito.
+  static const Color successSoft = Color(0xFFE3EEE6);
+
+  /// Fondo de insignia de error.
+  static const Color errorSoft = Color(0xFFF3E1DE);
+
+  /// Fondo de insignia informativa (= [tealWashed]).
+  static const Color infoSoft = Color(0xFFE6EEEC);
+
+  /// Fondo de insignia neutra (= [track]).
+  static const Color neutralSoft = Color(0xFFEFEBE0);
+
+  /// Scrim de modales y hojas · rgba(0,56,65,0.55).
+  static const Color overlay = Color(0x8C003841);
+
+  /// Barra de estado "sin conexión".
+  static const Color offline = Color(0xFF5A5A52);
+
+  // ── Error sobre teal (login y desbloqueo) ──────────────
+  /// Texto de error sobre [primary].
+  static const Color errorOnDark = Color(0xFFE3A99A);
+
+  /// Borde de campo con error sobre [primary].
+  static const Color errorBorderOnDark = Color(0xFFC97A6E);
 }

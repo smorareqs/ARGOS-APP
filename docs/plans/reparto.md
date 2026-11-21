@@ -12,7 +12,7 @@
 | --- | --- | --- |
 | Repos | BACKEND (núcleo y módulos administrativos) + WEB | APP + BACKEND (módulos que consume la app) |
 | Enfoque | Seguridad, multi-tenant, datos maestros, reservas, nómina, portal de administración | Ejecución en campo, offline, cámara, notificaciones, huésped, seguridad, chat |
-| Es dueña de | `src/core/*`, `src/api/dependencies.py`, `migrations/shared/*`, `tests/conftest.py`, todo `WEB/` | todo `APP/` (incluido `packages/design_system`), worker y handlers de jobs de sus módulos |
+| Es dueña de | `internal/core/*`, `internal/api/dependencies.go`, `migrations/shared/*`, `internal/testutil/*`, todo `WEB/` | todo `APP/` (incluido `packages/design_system`), worker y handlers de jobs de sus módulos |
 
 ## 2. Mapa de propiedad de archivos (evita colisiones)
 
@@ -20,17 +20,17 @@
 
 | Ruta | Dueño | Regla para el otro |
 | --- | --- | --- |
-| `src/core/` (config, database, security, storage, mail, jobs, notifications base) | A | B abre PR pequeño y A revisa el mismo día |
-| `src/api/dependencies.py` | A | ídem |
-| `src/api/v1/router.py` | compartido | solo se **agregan líneas** `include_router`; una línea por módulo; nunca reordenar |
-| `src/modules/models_registry.py` | compartido | solo se agregan imports; uno por módulo |
-| `src/modules/<módulo>/` | dueño del módulo (tabla §4) | el otro no edita; si necesita algo, lo pide por issue o PR |
-| `migrations/shared/versions/` | A | B nunca crea migraciones shared |
-| `migrations/tenant/versions/` | quien es dueño de las tablas | numeración fija (§5); B genera la suya solo después de que la de A de la misma fase esté en `main` |
-| `src/worker.py` y `src/core/jobs/registry.py` | A crea la infraestructura; ambos registran handlers | el registro de handlers es append-only |
-| `tests/conftest.py` | A | fixtures nuevas: B las propone en PR |
-| `tests/unit/<módulo>/`, `tests/integration/<módulo>/` | dueño del módulo | — |
-| `scripts/seed.py` | A la estructura; cada uno la sección de sus módulos | funciones `seed_<módulo>()` separadas |
+| `internal/core/` (config, database, migrate, security, storage, mail, jobs, notifications base) | A | B abre PR pequeño y A revisa el mismo día |
+| `internal/api/dependencies.go`, `internal/api/errors.go` | A | ídem |
+| `internal/api/v1/router.go` | compartido | solo se **agregan líneas** `register<Módulo>`; una línea por módulo; nunca reordenar |
+| `internal/app/services.go` | compartido | solo se agregan el campo y la línea de construcción de cada módulo |
+| `internal/modules/<módulo>/` y `internal/api/v1/<módulo>.go` | dueño del módulo (tabla §4) | el otro no edita; si necesita algo, lo pide por issue o PR |
+| `migrations/shared/` | A | B nunca crea migraciones shared |
+| `migrations/tenant/` | quien es dueño de las tablas | numeración fija (§5); B genera la suya solo después de que la de A de la misma fase esté en `main` |
+| `cmd/argos/worker.go` y `internal/core/jobs/registry.go` | A crea la infraestructura; ambos registran handlers | el registro de handlers es append-only |
+| `internal/testutil/` | A | utilidades nuevas: B las propone en PR |
+| `*_test.go` dentro de cada módulo | dueño del módulo | — |
+| `cmd/argos/seed.go` | A la estructura; cada uno la sección de sus módulos | funciones `seed<Módulo>()` separadas |
 | `README.md`, `docs/ARCHITECTURE.md` | A | B agrega secciones de sus módulos al final |
 
 ### WEB
@@ -48,18 +48,20 @@ acuerdo y quien lo modifica lo anota en avance.md.
 
 1. **Contrato antes que código.** Cuando un módulo de una persona será consumido por la
    otra (la web de A consume `tasks` de B; la app de B consume `properties` de A), el
-   dueño publica primero los schemas Pydantic y el listado de endpoints (ya están en
+   dueño publica primero los DTOs (`schemas.go`) y el listado de endpoints; el OpenAPI
+   se genera de ellos en `/api/v1/openapi.json` (ya están en
    cada `fase0N.md`; si algo cambia, se actualiza el documento en el mismo PR). El
    consumidor construye contra un mock hasta que el endpoint real esté en `main`.
    * Web: `*-api.service.ts` con implementación mock detrás de una bandera de entorno.
    * App: `MockRemoteDataSource` por feature, activada por `--dart-define=ARGOS_MOCK=true`.
-2. **La migración de A va primero en cada fase.** Es el primer PR de la fase; B genera la
-   suya con `down_revision` apuntando a la de A. Nunca dos cabezas de Alembic.
+2. **La migración de A va primero en cada fase.** Es el primer PR de la fase; B fusiona
+   la suya (número siguiente) cuando la de A ya está en `main`. El migrador se detiene si
+   una versión queda detrás de otra ya aplicada, así que nunca se fusiona fuera de orden.
 3. **Ramas cortas.** `feat/f<fase>-<módulo>` desde `main`, PR de menos de 500 líneas
    cuando se pueda, rebase diario sobre `main`. La rama `dev/sebas` actual se fusiona a
    `main` al iniciar la fase 1.
 4. **Revisión cruzada obligatoria** en cualquier PR que toque archivos compartidos
-   (router, registry, conftest, core, seed). En el resto, revisión opcional pero el otro
+   (router, services.go, testutil, core, seed). En el resto, revisión opcional pero el otro
    debe poder leerlo.
 5. **Hito de integración por fase.** Cada fase tiene un punto donde ambos conectan
    (tabla §4). Antes del hito cada uno prueba con mocks; después, con el backend real en
@@ -75,7 +77,7 @@ acuerdo y quien lo modifica lo anota en avance.md.
 
 | | Persona A | Persona B |
 | --- | --- | --- |
-| Backend | Todo el backend de la fase: reestructura Alembic (`shared` y `tenant`), `shared/0002_identity`, `tenant/0001_tenant_base`, módulo `authz` (permisos, roles, membresías), módulo `auth` (login, refresh, TOTP, invitaciones, reset, sesiones), `tenants` (provisioning, settings, platform), `core/storage` (S3), `core/jobs` (cola y worker), `core/mail` (SES), `files` (presign, confirm), pruebas de aislamiento §3.10, `scripts/seed.py`, CI | Nada (ver "arranque") |
+| Backend | Todo el backend de la fase (el migrador `shared`/`tenant` ya existe desde la migración a Go): `shared/0002_identity`, `tenant/0001_tenant_base`, módulo `authz` (permisos, roles, membresías), módulo `auth` (login, refresh, TOTP, invitaciones, reset, sesiones), `tenants` (provisioning, settings, platform), `core/storage` (S3), `core/jobs` (cola y worker), `core/mail` (SES), `files` (presign, confirm), pruebas de aislamiento §3.10, `argos seed demo-tenant`, CI | Nada (ver "arranque") |
 | Frontend | WEB: `core/auth`, interceptor, guards, directiva `*argosCan`, W-A1–W-A5, main-layout con sidebar por permisos, W-O1 (parcial), W-O2, W-O3 (permission-matrix), W-P1, W-P4 | APP: eliminar login MD5, `AuthRemoteDataSource`, interceptor con refresh único, `SecureStorageService` nuevo, `device_id`, biometría y PIN, A1–A10, B17, B18, TabScaffold y shell por rol con pestañas vacías, `session_cache` en Drift, `MockRemoteDataSource` de auth |
 | Arranque de B mientras A construye el backend | — | 1) Componentes nuevos del design system de fases 1 y 2 (IconButton, PinField, OtpField, Avatar, Skeleton, Toggle, Stepper, Checkbox grande, PhotoThumb, OfflineBar, ListTile, EmptyState, ErrorState, ConfirmSheet, SearchField, FilterChips, ChecklistItemRow, PhotoGrid, BeforeAfterPair, QuantityRow, TimelineItem, FormScaffold, DetailScaffold, SheetScaffold). 2) Cámara integrada con compresión y marca de agua. 3) Cola local `pending_uploads` en Drift con reintento (`workmanager`). 4) Pantallas de acceso contra el mock |
 | Hito de integración | A entrega `docker compose up` con auth funcionando y seed `demo-tenant`; B conecta A2–A8 y B17–B18 al backend real | |
@@ -118,7 +120,7 @@ acuerdo y quien lo modifica lo anota en avance.md.
 | | Persona A | Persona B |
 | --- | --- | --- |
 | Migración tenant | `0008_payroll`: payroll_settings, payroll_periods, payroll_entries, disciplinary_actions | `0009_attendance_metrics`: attendance_records, performance_snapshots, goals, incentive_awards |
-| Módulos backend | `payroll` (cómputo por esquema, Bono 14, aguinaldo, IGSS, estados, Excel con openpyxl, boleta PDF), `disciplinary` | `attendance` (marcaje, cierre automático, correcciones), `metrics` (job `performance_snapshot`, endpoints me/team/all/properties), `incentives` (metas, evaluación, aprobación) |
+| Módulos backend | `payroll` (cómputo por esquema, Bono 14, aguinaldo, IGSS, estados, Excel con excelize, boleta PDF), `disciplinary` | `attendance` (marcaje, cierre automático, correcciones), `metrics` (job `performance_snapshot`, endpoints me/team/all/properties), `incentives` (metas, evaluación, aprobación) |
 | Frontend | WEB: W-D2 (pestañas RRHH), W-J1–W-J5, W-K1–W-K2, payroll-grid | APP: B15, B19–B21, C1 (asistencia), E3, PayslipViewer, ClockButton |
 | Dependencias cruzadas | `payroll.compute` lee `attendance_records` y `incentive_awards` de B (solo lectura por repositorio propio) | — |
 | Hito de integración | Flujo F7: marcajes de app reflejados en nómina web; boleta visible en app | |
@@ -129,7 +131,7 @@ acuerdo y quien lo modifica lo anota en avance.md.
 | | Persona A | Persona B |
 | --- | --- | --- |
 | Migraciones | `shared/0003_billing`: plans, subscriptions, invoices, payments, payment_events, api_keys | `tenant/0010_chat_locks`: conversations, conversation_participants, messages, lock_devices, lock_access_codes |
-| Módulos backend | `billing` (`PaymentProvider`, `FakeProvider`, job `billing_cycle`, modo solo lectura 402 en `dependencies.py`, webhooks), `api_keys` + `public` (`POST /public/reservations` real), generador de pruebas de aislamiento por endpoint, rate limiting, `/health/ready` | `chat` (conversaciones, mensajes, WS, push de mensajes, creación automática para huéspedes), `locks` (`LockProvider`, `FakeLockProvider`, jobs `lock_provision` y `lock_revoke`), jobs de retención completos y observabilidad del worker |
+| Módulos backend | `billing` (`PaymentProvider`, `FakeProvider`, job `billing_cycle`, modo solo lectura 402 en `dependencies.go`, webhooks), `api_keys` + `public` (`POST /public/reservations` real), generador de pruebas de aislamiento por endpoint, rate limiting, `/health/ready` | `chat` (conversaciones, mensajes, WS, push de mensajes, creación automática para huéspedes), `locks` (`LockProvider`, `FakeLockProvider`, jobs `lock_provision` y `lock_revoke`), jobs de retención completos y observabilidad del worker |
 | Frontend | WEB: W-M1 (chat-panel, consume API de B), W-O4, W-P2–W-P3, guía de operación | APP: B22–B23, F8, código de cerradura en F1 |
 | Hito de integración | Chat huésped ↔ web en tiempo real; tenant suspendido en solo lectura en app y web | |
 | Cierre | A: OpenAPI exportado, README de backend y web | B: README de app, pruebas de aislamiento de la app (rol equivocado no ve pestañas) |
@@ -151,8 +153,9 @@ acuerdo y quien lo modifica lo anota en avance.md.
 | tenant | `0009_attendance_metrics` | B | 5 |
 | tenant | `0010_chat_locks` | B | 6 |
 
-Cada migración de B de una fase tiene `down_revision` = la de A de la misma fase (o la
-anterior de B si A no tiene en esa fase, como en la 6). Si alguien necesita una columna
+Las migraciones se aplican por número: cada migración de B de una fase va después de la
+de A de la misma fase (o de la anterior de B si A no tiene en esa fase, como en la 6) y
+se fusiona cuando esa ya está en `main`. Si alguien necesita una columna
 en una tabla del otro (ej. `tasks.reservation_id`), la agrega **el dueño de la tabla**
 en su propia migración de la fase, a petición del otro.
 

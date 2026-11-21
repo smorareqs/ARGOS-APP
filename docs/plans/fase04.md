@@ -192,7 +192,7 @@ daterange(check_in_date, check_out_date) WITH &&) WHERE (status NOT IN
   `max_per_reservation_per_day`; el service bloquea el área (`SELECT ... FOR UPDATE`)
   y verifica `count(confirmadas solapadas) < capacity`. Confirmación automática; correo y
   push. Cancelación hasta 1 h antes.
-* **iCal**: job `ical_sync` cada 30 min por feed: parsea eventos (`icalendar`), crea o
+* **iCal**: job `ical_sync` cada 30 min por feed: parsea eventos (`github.com/emersion/go-ical`), crea o
   actualiza reservas `source='ical'` por `(property_id, external_ref=UID)`, estado
   `pending` hasta que el admin completa huésped; cancela las que desaparecen del feed.
   No sobrescribe campos editados manualmente (guarda `synced_fields` en evento).

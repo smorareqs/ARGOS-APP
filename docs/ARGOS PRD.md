@@ -25,7 +25,7 @@ Se compone de tres piezas:
 
 | Pieza | Tecnología | Usuarios |
 | --- | --- | --- |
-| Backend API | FastAPI + PostgreSQL 16 + S3 | Todas las interfaces |
+| Backend API | Go (huma + chi, pgx) + PostgreSQL 16 + S3 | Todas las interfaces |
 | App móvil | Flutter | Colaboradores, supervisores, seguridad, mantenimiento, huéspedes |
 | Portal web | Angular 21 | Administradores, supervisores, propietarios, platform admin |
 

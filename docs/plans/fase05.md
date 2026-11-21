@@ -127,10 +127,10 @@ late_count…), `target numeric`, `comparator varchar(2)` (`>=`, `<=`),
 * Estados: `draft` (se puede recomputar), `review` (edición manual de montos),
   `closed` (inmutable; genera Excel y boletas; notifica "nómina disponible" a cada
   colaborador con su boleta).
-* **Excel** (`openpyxl`): hoja "Nómina" (una fila por colaborador con todas las
+* **Excel** (`excelize`): hoja "Nómina" (una fila por colaborador con todas las
   columnas de `payroll_entries` y datos del empleado: código, nombre, DPI, IGSS, NIT,
   puesto, esquema), hoja "Bono 14" (cuando aplica: promedio, meses, monto), hoja
-  "Asistencia" (días y horas por colaborador). **Boleta PDF** (`weasyprint`): logo del
+  "Asistencia" (días y horas por colaborador). **Boleta PDF** (`maroto`): logo del
   tenant, período, datos del colaborador, devengos, deducciones, neto.
 * **Disciplina**: crear acción notifica al colaborador (push + correo) y exige acuse en
   la app; el admin ve pendientes de acuse. Nunca modifica nómina.

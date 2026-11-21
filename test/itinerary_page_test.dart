@@ -1,5 +1,6 @@
-import 'package:argos_app/features/auth/models/usuario_entity.dart';
-import 'package:argos_app/features/auth/presentation/providers/auth_provider.dart';
+import 'package:argos_app/features/auth/models/session.dart';
+import 'package:argos_app/features/auth/presentation/providers/auth_state.dart';
+import 'package:argos_app/features/auth/presentation/providers/session_controller.dart';
 import 'package:argos_app/features/itinerary/presentation/pages/itinerary_page.dart';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
@@ -7,42 +8,56 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// Notifier de auth falso — evita abrir la base de datos real en el test.
-class _FakeAuth extends Auth {
+/// Sesión fija: evita depender del backend en la prueba de la pantalla.
+class _SignedIn extends SessionController {
   @override
-  Future<UsuarioEntity?> build() async => const UsuarioEntity(
-        id: 1,
-        codigo: 'mr',
-        nombre: 'María Ramos',
-        activo: true,
-      );
+  AuthState build() => const AuthSignedIn(
+    Session(
+      user: SessionUser(id: 'u-1', email: 'maria@argos.demo', fullName: 'María Ramos'),
+      tenant: ActiveTenant(id: 't-1', name: 'Costa Limpia S.A.'),
+      roleKey: 'cleaner',
+      roleName: 'Colaborador de limpieza',
+      permissions: {'tasks.execute'},
+    ),
+  );
 }
 
 void main() {
-  setUp(() {
-    GoogleFonts.config.allowRuntimeFetching = false;
-  });
+  setUp(() => GoogleFonts.config.allowRuntimeFetching = false);
 
-  testWidgets('Itinerario renderiza header, tareas y navegación', (tester) async {
+  testWidgets('Hoy muestra la cabecera con la sesión y la semana en curso', (tester) async {
+    var openedProfile = false;
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [authProvider.overrideWith(_FakeAuth.new)],
-        child: const MaterialApp(home: ItineraryPage()),
+        overrides: [sessionControllerProvider.overrideWith(_SignedIn.new)],
+        child: MaterialApp(
+          home: Scaffold(
+            body: ItineraryPage(
+              today: DateTime(2026, 10, 22), // miércoles
+              onOpenProfile: () => openedProfile = true,
+            ),
+          ),
+        ),
       ),
     );
     await tester.pump();
 
-    // Header con saludo por defecto (sin usuario en sesión).
     expect(find.text('Hola, María'), findsOneWidget);
-    expect(find.text('Agenda de hoy', skipOffstage: false), findsOneWidget);
+    expect(find.text('Miércoles 22 de octubre'), findsOneWidget);
+    expect(find.text('MR'), findsOneWidget);
 
-    // Componentes del design system presentes.
-    expect(find.byType(ItineraryHeader), findsOneWidget);
-    expect(find.byType(WeekStrip), findsOneWidget);
-    expect(find.byType(AppBottomNav), findsOneWidget);
-    expect(find.byType(TaskCard, skipOffstage: false), findsNWidgets(4));
+    // Semana de domingo 18 a sábado 24, con hoy seleccionado.
+    final days = tester.widget<WeekStrip>(find.byType(WeekStrip)).days;
+    expect(days.map((d) => d.day), ['18', '19', '20', '21', '22', '23', '24']);
+    expect(days.map((d) => d.weekday).join(), 'DLMMJVS');
+    expect(days.indexWhere((d) => d.selected), 4);
 
-    // Sin overflow ni excepciones de render.
+    // Sin datos de ejemplo: la agenda llega con la fase 2.
+    expect(find.byType(TaskCard), findsNothing);
+    expect(find.text('Tu agenda aparecerá aquí'), findsOneWidget);
+
+    await tester.tap(find.text('MR'));
+    expect(openedProfile, isTrue);
     expect(tester.takeException(), isNull);
   });
 }

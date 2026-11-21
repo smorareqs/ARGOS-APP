@@ -131,11 +131,12 @@ desactivar.
 
 ## 4. Notificaciones
 
-`src/core/notifications/NotificationService.notify(recipients, type, title, body, data,
-channels)`: inserta `notifications` y encola `send_push` y `send_email` según
-preferencias. Handlers:
+`internal/core/notifications` → `notifications.Service.Notify(ctx, q, recipients, type,
+title, body, data, channels)`: inserta `notifications` y encola `send_push` y
+`send_email` según preferencias. Handlers:
 
-* `send_push`: FCM HTTP v1 con `google-auth`; tokens en `shared.device_tokens`;
+* `send_push`: FCM HTTP v1 con el Firebase Admin SDK para Go
+  (`firebase.google.com/go/v4/messaging`); tokens en `shared.device_tokens`;
   tokens inválidos se borran.
 * `send_email`: plantilla por tipo.
 

@@ -24,6 +24,9 @@ class LoginPanel extends StatelessWidget {
     this.userValidator,
     this.passwordValidator,
     this.footer = 'ARGOS · v1.0',
+    this.userKeyboardType = TextInputType.text,
+    this.userAutofillHints,
+    this.errorText,
   });
 
   final TextEditingController userController;
@@ -39,6 +42,11 @@ class LoginPanel extends StatelessWidget {
   final String? Function(String?)? userValidator;
   final String? Function(String?)? passwordValidator;
   final String footer;
+  final TextInputType userKeyboardType;
+  final Iterable<String>? userAutofillHints;
+
+  /// Error del envío (p. ej. credenciales incorrectas), bajo el formulario.
+  final String? errorText;
 
   @override
   Widget build(BuildContext context) {
@@ -158,9 +166,10 @@ class LoginPanel extends StatelessWidget {
               controller: userController,
               hintText: userHint,
               prefixIcon: CustomIcons.email,
-              keyboardType: TextInputType.text,
+              keyboardType: userKeyboardType,
               textInputAction: TextInputAction.next,
               validator: userValidator,
+              autofillHints: userAutofillHints,
             ),
           ),
           const SizedBox(height: 14),
@@ -174,6 +183,7 @@ class LoginPanel extends StatelessWidget {
               textInputAction: TextInputAction.done,
               onSubmitted: (_) => onSubmit(),
               validator: passwordValidator,
+              autofillHints: const [AutofillHints.password],
               suffixIcon: onToggleObscure == null
                   ? null
                   : GestureDetector(
@@ -214,6 +224,20 @@ class LoginPanel extends StatelessWidget {
               ),
             ),
           ),
+          if (errorText != null) ...[
+            const SizedBox(height: 10),
+            Semantics(
+              liveRegion: true,
+              child: Text(
+                errorText!,
+                textAlign: TextAlign.center,
+                style: CustomTypography.verdana(
+                  fontSize: 13,
+                  color: CustomColors.errorOnDark,
+                ),
+              ),
+            ),
+          ],
           const SizedBox(height: 14),
           PrimaryButton(
             label: 'Iniciar sesión',

@@ -90,8 +90,9 @@ class ItineraryHeader extends StatelessWidget {
               _avatar(),
             ],
           ),
-          const SizedBox(height: 20),
-          Row(
+          if (summaries.isNotEmpty) ...[
+            const SizedBox(height: 20),
+            Row(
             children: [
               for (var i = 0; i < summaries.length; i++) ...[
                 Expanded(
@@ -108,6 +109,7 @@ class ItineraryHeader extends StatelessWidget {
               ],
             ],
           ),
+          ],
         ],
       ),
     );
@@ -157,7 +159,10 @@ class ItineraryHeader extends StatelessWidget {
   }
 
   Widget _avatar() {
-    return GestureDetector(
+    return Semantics(
+      button: onTapAvatar != null,
+      label: 'Perfil',
+      child: GestureDetector(
       onTap: onTapAvatar,
       behavior: HitTestBehavior.opaque,
       child: Container(
@@ -172,6 +177,7 @@ class ItineraryHeader extends StatelessWidget {
           initials,
           style: CustomTypography.garamond(fontSize: 17, color: Colors.white),
         ),
+      ),
       ),
     );
   }

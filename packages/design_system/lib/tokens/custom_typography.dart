@@ -54,11 +54,27 @@ abstract final class CustomTypography {
   /// Saludo (Buenos días, …). Garamond 600 · 30px.
   static TextStyle get greeting => pageTitle;
 
+  /// Título de sección y cabecera de hoja. Garamond 600 · 22px.
+  static TextStyle get sectionTitle => garamond(fontSize: 22, height: 1.2);
+
   /// Título de tarjeta (H2). Garamond 600 · 17px.
   static TextStyle get cardTitle => garamond(fontSize: 17);
 
-  /// Cuerpo y descripciones. Verdana · 14px.
-  static TextStyle get body => verdana(fontSize: 14, height: 1.6);
+  /// Cuerpo y descripciones. Verdana · 16px (en campo, 14 resultaba pequeño).
+  static TextStyle get body => verdana(fontSize: 16, height: 1.5);
+
+  /// Metadatos en tarjetas y listas. Verdana · 13px.
+  static TextStyle get bodySmall => verdana(fontSize: 13, height: 1.5);
+
+  /// Códigos, placas, SKU y TOTP. Monoespaciada · 14px.
+  static TextStyle get mono => const TextStyle(
+    fontFamily: 'monospace',
+    fontFamilyFallback: ['Menlo', 'Roboto Mono', 'Courier'],
+    fontSize: 14,
+    fontWeight: FontWeight.w600,
+    color: CustomColors.primary,
+    letterSpacing: 1,
+  );
 
   /// Dato / valor en tabla. Verdana 700 · 13px.
   static TextStyle get data => verdana(

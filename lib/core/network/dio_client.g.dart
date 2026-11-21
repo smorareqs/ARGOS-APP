@@ -6,9 +6,30 @@ part of 'dio_client.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$dioClientHash() => r'7a810d96f0c093d9f94314c977acf6cd194bf4b4';
+String _$publicDioHash() => r'01a2e805e89cc20c83c5d5ad0b65f78d6a16140d';
 
-/// See also [dioClient].
+/// Cliente sin token: login, refresh, recuperar contraseña e invitaciones.
+///
+/// Copied from [publicDio].
+@ProviderFor(publicDio)
+final publicDioProvider = Provider<Dio>.internal(
+  publicDio,
+  name: r'publicDioProvider',
+  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
+      ? null
+      : _$publicDioHash,
+  dependencies: null,
+  allTransitiveDependencies: null,
+);
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef PublicDioRef = ProviderRef<Dio>;
+String _$dioClientHash() => r'8b417a95d92c1f0383090a4ed4a08b789efa755e';
+
+/// Cliente autenticado: agrega el token de acceso y lo renueva ante un 401.
+///
+/// Copied from [dioClient].
 @ProviderFor(dioClient)
 final dioClientProvider = Provider<Dio>.internal(
   dioClient,

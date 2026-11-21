@@ -19,7 +19,7 @@ Todas las tablas llevan `id`, `created_at`, `updated_at`. Las FK a usuarios apun
 Reparto (ver [reparto.md](reparto.md)): `0002_properties` (Persona A) crea `buildings`,
 `properties`, `property_owners`, `property_assignments`, `employees`,
 `employee_schedules`, `checklist_templates` y `checklist_template_items`.
-`0003_tasks_inventory` (Persona B, `down_revision` = 0002) crea `tasks`,
+`0003_tasks_inventory` (Persona B, se aplica después de 0002) crea `tasks`,
 `task_checklist_items`, `task_events`, `task_consumptions` y todas las tablas de
 inventario.
 
