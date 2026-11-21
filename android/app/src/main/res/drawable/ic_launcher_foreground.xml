@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Logotipo ARGOS: la casa trazada con la greca (mismo trazo que ARGOS-WEB public/brand). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:translateX="25.2"
+        android:translateY="24"
+        android:scaleX="1.2"
+        android:scaleY="1.2">
+        <path
+            android:pathData="M7 43V20.5L24 7l17 13.5V43H15.5V26.5h17V35H23.5"
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="5"
+            android:strokeLineJoin="miter" />
+    </group>
+</vector>

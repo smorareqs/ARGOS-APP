@@ -3,7 +3,7 @@
     <!-- La cámara solo toma fotos: no pedimos micrófono (lo agrega el plugin). -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" tools:node="remove" />
     <application
-        android:label="argos_app"
+        android:label="ARGOS"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

@@ -1,3 +1,4 @@
+import 'package:design_system/atoms/argos_logo.dart';
 import 'package:design_system/atoms/dark_text_field.dart';
 import 'package:design_system/atoms/primary_button.dart';
 import 'package:design_system/tokens/custom_colors.dart';
@@ -99,33 +100,8 @@ class LoginPanel extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Símbolo — anillo blanco con halo dorado + punto dorado.
-          Container(
-            width: 78,
-            height: 78,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.85),
-                width: 3,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: CustomColors.secondary.withValues(alpha: 0.10),
-                  spreadRadius: 8,
-                ),
-              ],
-            ),
-            alignment: Alignment.center,
-            child: Container(
-              width: 22,
-              height: 22,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: CustomColors.secondary,
-              ),
-            ),
-          ),
+          // Símbolo — la casa con greca, en blanco sobre el teal.
+          const ArgosLogo(showWordmark: false, size: 78, color: Colors.white),
           const SizedBox(height: 26),
           Padding(
             padding: const EdgeInsets.only(left: 11),
