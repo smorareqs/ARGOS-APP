@@ -10,6 +10,7 @@ import 'package:argos_app/features/auth/presentation/pages/splash_page.dart';
 import 'package:argos_app/features/auth/presentation/pages/tenant_select_page.dart';
 import 'package:argos_app/features/auth/presentation/pages/totp_page.dart';
 import 'package:argos_app/features/auth/presentation/pages/unlock_page.dart';
+import 'package:argos_app/features/dev/presentation/pages/component_catalog_page.dart';
 import 'package:argos_app/features/profile/presentation/pages/profile_page.dart';
 import 'package:argos_app/features/shell/presentation/pages/home_shell_page.dart';
 import 'package:argos_app/features/sync/presentation/pages/sync_page.dart';
@@ -79,6 +80,10 @@ GoRouter appRouter(Ref ref) {
       GoRoute(
         path: '/profile/password',
         builder: (context, state) => const ChangePasswordPage(),
+      ),
+      GoRoute(
+        path: '/profile/components',
+        builder: (context, state) => const ComponentCatalogPage(),
       ),
       GoRoute(path: '/sync', builder: (context, state) => const SyncPage()),
     ],

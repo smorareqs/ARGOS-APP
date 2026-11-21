@@ -1,3 +1,4 @@
+import 'package:argos_app/core/config/app_config.dart';
 import 'package:argos_app/core/device/device_identity.dart';
 import 'package:argos_app/features/auth/models/quick_unlock.dart';
 import 'package:argos_app/features/auth/models/session.dart';
@@ -5,6 +6,7 @@ import 'package:argos_app/features/auth/presentation/providers/account_providers
 import 'package:argos_app/features/auth/presentation/providers/auth_state.dart';
 import 'package:argos_app/features/auth/presentation/providers/session_controller.dart';
 import 'package:design_system/design_system.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -26,6 +28,7 @@ class ProfilePage extends ConsumerWidget {
     final online = !state.offline;
     final quickUnlock = ref.watch(quickUnlockControllerProvider).value;
     final version = ref.watch(appVersionProvider).value;
+    final showCatalog = kDebugMode || ref.watch(appConfigProvider).useMock;
 
     const needsConnection = 'Requiere conexión';
 
@@ -87,6 +90,18 @@ class ProfilePage extends ConsumerWidget {
             showChevron: false,
           ),
         ),
+        if (showCatalog) ...[
+          const SizedBox(height: CustomDimensions.spacingMd),
+          AppCard(
+            padding: EdgeInsets.zero,
+            child: AppListTile(
+              icon: CustomIcons.compare,
+              title: 'Catálogo de componentes',
+              subtitle: 'Solo en modo de pruebas',
+              onTap: () => context.push('/profile/components'),
+            ),
+          ),
+        ],
         const SizedBox(height: CustomDimensions.spacingMd),
         AppCard(
           padding: EdgeInsets.zero,

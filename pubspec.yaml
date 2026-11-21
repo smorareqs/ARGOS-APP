@@ -42,3 +42,7 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  # Fotos de ejemplo para el catálogo de componentes (solo pruebas).
+  assets:
+    - assets/demo/
