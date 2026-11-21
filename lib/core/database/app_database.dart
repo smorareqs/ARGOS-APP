@@ -1,3 +1,4 @@
+import 'package:argos_app/core/database/tables/pending_uploads_table.dart';
 import 'package:argos_app/core/database/tables/session_cache_table.dart';
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
@@ -6,12 +7,12 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'app_database.g.dart';
 
-@DriftDatabase(tables: [SessionCache])
+@DriftDatabase(tables: [SessionCache, PendingUploads])
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -23,6 +24,7 @@ class AppDatabase extends _$AppDatabase {
         await m.deleteTable('usuarios');
         await m.createTable(sessionCache);
       }
+      if (from < 3) await m.createTable(pendingUploads);
     },
   );
 

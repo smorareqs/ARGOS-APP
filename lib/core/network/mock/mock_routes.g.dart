@@ -6,7 +6,7 @@ part of 'mock_routes.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$mockBackendHash() => r'a9f59fc82bc6102099f8d0a235cdafd340861f91';
+String _$mockBackendHash() => r'6ae8fac9fbf5a1b51578ec81f59f8db456aa3711';
 
 /// Backend simulado con las rutas de todas las features.
 ///

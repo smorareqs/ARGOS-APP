@@ -1,4 +1,7 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <!-- La cámara solo toma fotos: no pedimos micrófono (lo agrega el plugin). -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" tools:node="remove" />
     <application
         android:label="argos_app"
         android:name="${applicationName}"

@@ -1,5 +1,11 @@
+import 'dart:io';
+
+import 'package:argos_app/features/camera/presentation/pages/camera_page.dart';
+import 'package:argos_app/features/uploads/models/pending_upload.dart';
+import 'package:argos_app/features/uploads/presentation/providers/upload_providers.dart';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 const _before = AssetImage('assets/demo/room_before.jpg');
@@ -8,24 +14,74 @@ const _after = AssetImage('assets/demo/room_after.jpg');
 /// Catálogo de componentes del design system con datos de ejemplo, para
 /// revisarlos en el teléfono. Solo aparece en Perfil en modo de pruebas
 /// (ARGOS_MOCK) o en compilaciones de depuración.
-class ComponentCatalogPage extends StatefulWidget {
+///
+/// El ítem "Tender la cama" usa la cámara y la cola de subida de verdad: la
+/// foto se comprime, lleva marca de agua y se sube (al backend simulado en
+/// modo de pruebas).
+class ComponentCatalogPage extends ConsumerStatefulWidget {
   const ComponentCatalogPage({super.key});
 
   @override
-  State<ComponentCatalogPage> createState() => _ComponentCatalogPageState();
+  ConsumerState<ComponentCatalogPage> createState() =>
+      _ComponentCatalogPageState();
 }
 
-class _ComponentCatalogPageState extends State<ComponentCatalogPage> {
+const _demoEntityType = 'demo_checklist_item';
+const _demoEntityId = 'tender-cama';
+
+class _ComponentCatalogPageState extends ConsumerState<ComponentCatalogPage> {
   var _filter = <String>{'hoy'};
   var _search = '';
   var _amount = 2;
   final _checks = <int, bool>{0: true, 1: false, 2: false};
-  var _photoCount = 0;
   var _returned = 3;
   var _consumed = 1;
 
+  Future<void> _takePhotos({ImageProvider? reference}) async {
+    final photos = await openCamera(
+      context,
+      CameraRequest(
+        title: 'Tender la cama',
+        propertyCode: 'LAU-01',
+        reference: reference,
+      ),
+    );
+    if (photos == null) return;
+    final queue = ref.read(uploadQueueProvider);
+    for (final bytes in photos) {
+      await queue.enqueue(
+        bytes: bytes,
+        module: 'cleaning',
+        kind: 'checklist_photo',
+        entityType: _demoEntityType,
+        entityId: _demoEntityId,
+      );
+    }
+  }
+
+  List<PhotoItem> _photoItems(List<PendingUpload> uploads) => [
+    for (final u in uploads)
+      PhotoItem(
+        image: FileImage(File(u.localPath)),
+        status: switch (u.status) {
+          UploadStatus.queued => PhotoUploadStatus.queued,
+          UploadStatus.uploading => PhotoUploadStatus.uploading,
+          UploadStatus.done => PhotoUploadStatus.done,
+          UploadStatus.error => PhotoUploadStatus.error,
+        },
+        progress: u.progress,
+        onRetry: () => ref.read(uploadQueueProvider).retry(u.id),
+      ),
+  ];
+
   @override
   Widget build(BuildContext context) {
+    final uploads =
+        ref
+            .watch(entityUploadsProvider(_demoEntityType, _demoEntityId))
+            .value ??
+        const <PendingUpload>[];
+    final photos = _photoItems(uploads);
     return FormScaffold(
       title: 'Componentes',
       subtitle: 'Piezas del design system con datos de ejemplo.',
@@ -102,11 +158,8 @@ class _ComponentCatalogPageState extends State<ComponentCatalogPage> {
                 description: 'Foto de la cama terminada',
                 checked: _checks[1]!,
                 requiresPhoto: true,
-                photos: [
-                  for (var i = 0; i < _photoCount; i++)
-                    const PhotoItem(image: _after),
-                ],
-                onTakePhoto: () => setState(() => _photoCount++),
+                photos: photos,
+                onTakePhoto: _takePhotos,
                 onChanged: (v) => setState(() => _checks[1] = v),
               ),
               ChecklistItemRow(
@@ -140,6 +193,30 @@ class _ComponentCatalogPageState extends State<ComponentCatalogPage> {
         ),
         const SizedBox(height: 20),
         const BeforeAfterPair(before: _before, after: _after),
+        const SizedBox(height: 16),
+        SecondaryButton(
+          label: 'Probar cámara con guía "antes"',
+          onPressed: () => _takePhotos(reference: _before),
+        ),
+        if (uploads.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          Text(
+            'Fotos tomadas en esta prueba',
+            style: CustomTypography.label,
+          ),
+          const SizedBox(height: 10),
+          PhotoGrid(photos: photos),
+          const SizedBox(height: 8),
+          TertiaryButton(
+            label: 'Borrar fotos de prueba',
+            onPressed: () async {
+              final queue = ref.read(uploadQueueProvider);
+              for (final u in uploads) {
+                await queue.remove(u.id);
+              }
+            },
+          ),
+        ],
         const SizedBox(height: 32),
         const SectionHeader(number: '05', title: 'Historial'),
         const SizedBox(height: 16),

@@ -1,7 +1,13 @@
+import 'dart:io';
+
 import 'package:argos_app/features/dev/presentation/pages/component_catalog_page.dart';
+import 'package:argos_app/features/uploads/presentation/providers/upload_providers.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
+
+import 'helpers/harness.dart';
 
 void main() {
   setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
@@ -13,7 +19,18 @@ void main() {
     tester.view.devicePixelRatio = 2.75;
     addTearDown(tester.view.reset);
 
-    await tester.pumpWidget(const MaterialApp(home: ComponentCatalogPage()));
+    final harness = Harness();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          ...harness.overrides,
+          uploadStorageDirProvider.overrideWithValue(
+            () async => Directory.systemTemp,
+          ),
+        ],
+        child: const MaterialApp(home: ComponentCatalogPage()),
+      ),
+    );
     await tester.pump();
     expect(find.text('Componentes'), findsOneWidget);
 
@@ -25,5 +42,9 @@ void main() {
     await tester.tap(find.text('Ver detalle de ejemplo'));
     await tester.pumpAndSettle();
     expect(find.text('Iniciar limpieza'), findsOneWidget);
+
+    // Deja que Drift cierre sus consultas antes de terminar.
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(seconds: 1));
   });
 }
