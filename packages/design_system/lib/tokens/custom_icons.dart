@@ -65,4 +65,26 @@ abstract final class CustomIcons {
   static const IconData property = Icons.home_outlined;
   static const IconData incident = Icons.warning_amber_rounded;
   static const IconData done = Icons.check_rounded;
+
+  // ── Fase 2: ejecución, fotos e inventario ──────────────
+  static const IconData camera = Icons.photo_camera_outlined;
+  static const IconData cameraSwitch = Icons.cameraswitch_outlined;
+  static const IconData flashOn = Icons.flash_on_rounded;
+  static const IconData flashOff = Icons.flash_off_rounded;
+  static const IconData flashAuto = Icons.flash_auto_rounded;
+  static const IconData photo = Icons.image_outlined;
+  static const IconData add = Icons.add_rounded;
+  static const IconData remove = Icons.remove_rounded;
+  static const IconData retry = Icons.replay_rounded;
+  static const IconData uploadQueued = Icons.cloud_queue_rounded;
+  static const IconData uploadDone = Icons.cloud_done_rounded;
+  static const IconData uploadError = Icons.cloud_off_rounded;
+  static const IconData compare = Icons.compare_rounded;
+  static const IconData clear = Icons.cancel_rounded;
+  static const IconData filter = Icons.tune_rounded;
+  static const IconData expand = Icons.expand_more_rounded;
+  static const IconData play = Icons.play_arrow_rounded;
+  static const IconData doneAll = Icons.done_all_rounded;
+  static const IconData pending = Icons.schedule_rounded;
+  static const IconData cancel = Icons.close_rounded;
 }
