@@ -1,0 +1,19 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "ARGOS (datos de prueba)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "args": ["--dart-define=ARGOS_MOCK=true"]
+    },
+    {
+      "name": "ARGOS (backend local)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "args": ["--dart-define=ARGOS_API_URL=http://10.0.2.2:8000/api/v1"]
+    }
+  ]
+}
