@@ -33,7 +33,7 @@ void main() {
         child: MaterialApp(
           home: Scaffold(
             body: ItineraryPage(
-              today: DateTime(2026, 10, 22), // miércoles
+              today: DateTime(2026, 10, 22), // jueves
               onOpenProfile: () => openedProfile = true,
             ),
           ),
@@ -43,7 +43,7 @@ void main() {
     await tester.pump();
 
     expect(find.text('Hola, María'), findsOneWidget);
-    expect(find.text('Miércoles 22 de octubre'), findsOneWidget);
+    expect(find.text('Jueves 22 de octubre'), findsOneWidget);
     expect(find.text('MR'), findsOneWidget);
 
     // Semana de domingo 18 a sábado 24, con hoy seleccionado.

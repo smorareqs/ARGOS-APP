@@ -9,9 +9,14 @@ import 'package:google_fonts/google_fonts.dart';
 import 'helpers/harness.dart';
 
 /// Avanza la UI sin `pumpAndSettle` (los esqueletos y spinners animan sin fin).
+///
+/// Entre cuadros deja correr unos milisegundos de tiempo real: el login pasa
+/// por E/S real (Drift en memoria, almacenamiento seguro simulado, carga de
+/// fuentes) que el reloj falso de las pruebas no hace avanzar por sí solo.
 Future<void> settle(WidgetTester tester, {int frames = 30}) async {
   for (var i = 0; i < frames; i++) {
     await tester.pump(const Duration(milliseconds: 50));
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 5)));
   }
 }
 

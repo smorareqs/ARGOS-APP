@@ -18,3 +18,8 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  # EB Garamond empaquetada: google_fonts la toma de aquí y no la descarga
+  # (la app debe verse bien sin conexión, ux-ui.md §1). Licencia: OFL.txt.
+  assets:
+    - assets/fonts/
