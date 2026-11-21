@@ -295,3 +295,8 @@ Contratos que la web asume y que faltan en los fase0N.md (revisar al construir e
   edificios, W-C4 plantillas de checklist, W-M1 chat, W-P1–P4 plataforma e importación CSV de
   artículos. La facturación (W-O4) muestra datos de muestra hasta la fase 6.
 
+### 2026-11-21
+
+* [B] Entorno de desarrollo de la app en Windows: Flutter 3.35.7 (la 3.50 no es compatible con Gradle 8.12 / AGP 8.9.1 del proyecto) y JDK 17 (el Java 25 de Android Studio no sirve para Gradle 8.12). Guía en [`../DESARROLLO.md`](../DESARROLLO.md).
+* [B] `.vscode/launch.json` con dos configuraciones (datos de prueba con `ARGOS_MOCK=true` y backend local) y `usesCleartextTraffic` solo en el manifest de debug para hablar con el backend local por http desde el emulador.
+* [B] Pendiente: 4 pruebas fallan con `flutter test` (3 del flujo de login en `test/widget_test.dart` y 1 de `test/itinerary_page_test.dart` que depende de la fecha).
