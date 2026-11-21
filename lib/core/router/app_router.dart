@@ -14,6 +14,8 @@ import 'package:argos_app/features/dev/presentation/pages/component_catalog_page
 import 'package:argos_app/features/profile/presentation/pages/profile_page.dart';
 import 'package:argos_app/features/shell/presentation/pages/home_shell_page.dart';
 import 'package:argos_app/features/sync/presentation/pages/sync_page.dart';
+import 'package:argos_app/features/tasks/models/task_summary.dart';
+import 'package:argos_app/features/tasks/presentation/pages/task_detail_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -84,6 +86,11 @@ GoRouter appRouter(Ref ref) {
       GoRoute(
         path: '/profile/components',
         builder: (context, state) => const ComponentCatalogPage(),
+      ),
+      GoRoute(
+        path: '/tasks/:id',
+        builder: (context, state) =>
+            TaskDetailPage(task: state.extra is TaskSummary ? state.extra! as TaskSummary : null),
       ),
       GoRoute(path: '/sync', builder: (context, state) => const SyncPage()),
     ],

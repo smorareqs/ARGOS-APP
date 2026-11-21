@@ -87,4 +87,12 @@ abstract final class CustomIcons {
   static const IconData doneAll = Icons.done_all_rounded;
   static const IconData pending = Icons.schedule_rounded;
   static const IconData cancel = Icons.close_rounded;
+
+  // ── Agenda (B1–B3) ──
+  static const IconData cleaning = Icons.cleaning_services_outlined;
+  static const IconData inspection = Icons.fact_check_outlined;
+  static const IconData maintenance = Icons.handyman_outlined;
+  static const IconData directions = Icons.directions_outlined;
+  static const IconData notes = Icons.sticky_note_2_outlined;
+  static const IconData location = Icons.place_outlined;
 }

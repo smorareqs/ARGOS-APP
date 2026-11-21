@@ -9,6 +9,7 @@ import 'package:argos_app/features/auth/data/datasources/biometric_datasource.da
 import 'package:argos_app/features/auth/data/mock/auth_mock_routes.dart';
 import 'package:argos_app/features/auth/presentation/providers/auth_state.dart';
 import 'package:argos_app/features/auth/presentation/providers/session_controller.dart';
+import 'package:argos_app/features/tasks/data/mock/tasks_mock_routes.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -73,6 +74,7 @@ class Harness {
        connectivity = FakeConnectivity(online: online) {
     FlutterSecureStorage.setMockInitialValues(Map.of(storage));
     registerAuthMockRoutes(backend, clock: clock.now);
+    registerTasksMockRoutes(backend, clock: clock.now);
   }
 
   final TestClock clock;

@@ -57,6 +57,7 @@ class RouterNotifier extends ChangeNotifier {
             path == '/sync' ||
             path == '/profile' ||
             path.startsWith('/profile/') ||
+            path.startsWith('/tasks/') ||
             tabsForSession(session).any((t) => path == '/home/${t.id}'),
     };
   }
