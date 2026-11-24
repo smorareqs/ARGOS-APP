@@ -1,6 +1,10 @@
 # Fase 2 — Operación: propiedades, colaboradores, itinerario, limpiezas e inventario
 
-> Estado: pendiente. Requiere fase 1 completa.
+> Estado: en curso. Parte de Persona A **hecha** (2026-11-21): migraciones `shared/0003_role_scope` y
+> `tenant/0002_properties`, módulos `properties`, `checklists`, `employees`, `audit` (lectura),
+> `ScopeResolver` (`authz.ResolvePropertyScope`) y `sync` (`GET /sync/bootstrap`), con la web conectada
+> (W-C1 a W-C4, W-D2 sin RRHH, W-N1). Contrato en §4.1. Pendiente: `tenant/0003_tasks_inventory` y
+> los módulos `tasks` e `inventory` (Persona B).
 
 ## 1. Objetivo
 
@@ -265,6 +269,121 @@ Se actualiza en la misma transacción que el movimiento.
 | `GET /audit?entity=&property=&actor=&from=&to=` | `audit.read` |
 
 Todos con paginación por cursor (`?cursor=&limit=`).
+
+### 4.1 Contrato implementado (Persona A, 2026-11-21)
+
+Existe en el backend (rama `dev/sebas`) y la web lo usa contra la API real. **La app de B puede
+consumirlo tal cual.** OpenAPI vivo en `GET /api/v1/openapi.json`. Todas las rutas van bajo `/api/v1`
+y operan en la empresa de la sesión (el `tid` del token); en modo plataforma responden 403.
+
+Convenciones nuevas:
+
+* **Alcance** (`authz.ResolvePropertyScope`): ve todas las propiedades quien tiene `properties.manage`,
+  `tasks.manage` o un rol sin alcance restringido (`roles.scoped = false`: administración, supervisión,
+  seguridad). Los roles con `scoped = true` (limpieza, mantenimiento, propietario y los personalizados
+  que lo marquen) ven solo `property_assignments` ∪ `property_owners`. Fuera de alcance: la lista no
+  la trae y por id responde **404**.
+* **Paginación** (`internal/core/paging`): `?limit=` (por defecto 50, máximo 500) y `?cursor=` opaco;
+  respuesta `{items, next_cursor}` (null en la última página). Un cursor inválido da 422 `query.cursor`.
+* **PATCH**: solo cambia lo que viene; `null` borra un campo opcional (`internal/core/optional`).
+* Errores 422 con `errors[].location` por campo (`body.code`, `body.user_ids`…), como en la fase 1.
+
+**Propiedades** (`properties.read` para leer, `properties.manage` para escribir):
+
+| Endpoint | Cuerpo / query | Respuestas |
+| --- | --- | --- |
+| **`GET /properties`** | `q` (código, nombre, zona o edificio; sin importar tildes), `building_id`, `active=true` o `false`, `assignee`, `owner`, `cursor`, `limit` | 200 página de propiedades (ver abajo), por código |
+| **`GET /properties/{id}`** | — | 200 · 404 fuera de alcance |
+| `POST /properties` | `code` (2–32 letras, números o guiones; se guarda en mayúsculas), `name`, `type` (`apartment`, `house`, `room`, `other`), `building_id?`, `address?`, `zone?`, `lat?` y `lng?` (juntas), `bedrooms?`, `bathrooms?`, `max_guests?`, `checklist_template_id?` (sin valor = plantilla por defecto), `access_info?`, `cover_file_id?`, `notes?` | 201 · 422 `body.code` (repetido o inválido), `body.building_id`, `body.checklist_template_id`, `body.cover_file_id`, `body.lat` |
+| `PATCH /properties/{id}` | cualquiera de los anteriores y `is_active`; `access_info: null` o `""` la borra | 200 · 404 · 422 por campo |
+| `DELETE /properties/{id}` | — | 204. Borrado lógico: libera el código y quita asignaciones; el historial queda |
+| **`GET /properties/{id}/access-info`** | — | 200 `{property_id, text, updated_at, viewed_at}` (`properties.access_info`). Cada consulta queda en la bitácora (`property.access_viewed`). Limpieza y mantenimiento reciben **403** sin tarea del día (ver `AccessGate`); 404 si no tiene acceso cargado |
+| `PUT /properties/{id}/assignments` · `/owners` | `user_ids[]` (personas de la empresa) | 200 propiedad · 422 `body.user_ids` |
+| `PUT /property-assignments/{user_id}` · `/property-owners/{user_id}` | `property_ids[]` | 200 `{user_id, property_ids}` · 404 si la persona no es de la empresa · 422 `body.property_ids` |
+
+Propiedad: `{id, code, name, type, building_id, building_name, building_zone, address, zone, lat, lng,
+bedrooms, bathrooms, max_guests, checklist_template_id, checklist_template_name, has_access_info,
+access_info_updated_at, cover_file_id, cover_url (firmada 12 h), notes, is_active, assigned[{user_id,
+full_name}], owners[{user_id, full_name}], created_at, updated_at}`. **Nunca** trae el texto de acceso.
+Cuando existan tareas (0003) se agregan `today_status` y `last_cleaning_at`, y en la fase 3
+`open_incidents` (A agrega esos JOIN en su repositorio).
+
+**Edificios** (`properties.read` / `properties.manage`):
+
+| Endpoint | Cuerpo | Respuestas |
+| --- | --- | --- |
+| **`GET /buildings`** · `GET /buildings/{id}` | — | 200 `{id, name, address, zone, lat, lng, notes, is_active, properties_count, created_at, updated_at}`. Con alcance restringido, solo los edificios donde tiene alguna propiedad |
+| `POST /buildings` · `PATCH /buildings/{id}` | `name`, `address?`, `zone?`, `lat?` y `lng?`, `notes?` (`is_active` en PATCH) | 201/200 · 422 `body.name` (repetido) / `body.lat` |
+| `DELETE /buildings/{id}` | — | 204 · 422 si tiene propiedades (se desactiva en su lugar) |
+
+**Plantillas de checklist** (leer con `properties.read`, cambiar con `properties.manage`):
+
+| Endpoint | Cuerpo | Respuestas |
+| --- | --- | --- |
+| **`GET /checklist-templates`** · `GET /checklist-templates/{id}` | — | 200 `{id, name, description, is_default, properties_count, items[{id, section, position, text, requires_photo, requires_before_after}], created_at, updated_at}`; la de por defecto primero |
+| `POST /checklist-templates` | `name`, `description?`, `is_default?`, `items[{section, text, requires_photo?, requires_before_after?}]` (el orden de la lista es el orden; antes y después implica foto) | 201 · 422 `body.name` (repetido) / `body.items` (vacío) |
+| `PATCH /checklist-templates/{id}` | lo anterior opcional; `items` reemplaza todos | 200. Marcar `is_default` le quita la marca a la anterior |
+| `DELETE /checklist-templates/{id}` | — | 204; sus propiedades quedan sin plantilla |
+
+Diferencia con el plan: leer plantillas pide `properties.read` (no `properties.manage`) porque la app
+las necesita sin conexión. La tarea copia los ítems al iniciar (B), así que editar una plantilla no
+cambia las tareas en curso.
+
+**Ficha laboral** (`users.manage`):
+
+| Endpoint | Cuerpo | Respuestas |
+| --- | --- | --- |
+| `GET /employees?user_id=` · `GET /employees/{id}` | — | 200 `{id, user_id, full_name, email, employee_code, position, hire_date, termination_date, document_type, document_number, igss_number, nit, pay_type, pay_rate, on_payroll, emergency_name, emergency_phone, emergency_relation, notes, schedule[], created_at, updated_at}` |
+| `POST /employees` | `user_id`, `position`, `hire_date` (AAAA-MM-DD), `pay_type` (`fixed_monthly`, `per_day`, `per_hour`, `per_cleaning`), `pay_rate` y opcionales: `employee_code` (sin valor: EMP-0001…), `termination_date`, `document_type` (`dpi`, `passport`), `document_number` (DPI: 13 dígitos), `igss_number`, `nit` (1234567-8 o CF), `on_payroll`, `emergency_name` con `emergency_phone`, `emergency_relation`, `notes`, `schedule[]` | 201 · 422 `body.user_id` (no es de la empresa o ya tiene ficha), `body.document_number`, `body.document_type`, `body.nit`, `body.termination_date`, `body.emergency_phone`, `body.schedule` |
+| `PATCH /employees/{id}` | lo anterior sin `user_id` ni `schedule`; null borra | 200 |
+| `PUT /employees/{id}/schedule` | `blocks[{weekday (0 = domingo … 6 = sábado), starts_at, ends_at (HH:MM)}]` | 200 ficha · 422 `body.blocks` (fin antes del inicio o bloques que se cruzan el mismo día) |
+
+La bitácora de la ficha registra qué campos cambiaron, nunca los valores de los documentos.
+
+**Bitácora** (`audit.read`):
+
+| Endpoint | Query | Respuestas |
+| --- | --- | --- |
+| `GET /audit` | `entity`, `entity_id`, `property_id`, `actor_id`, `action` (prefijo, p. ej. `property.`), `from` y `to` (RFC 3339; `to` excluyente), `cursor`, `limit` | 200 página de `{id, actor_id, actor_name, actor_email, actor_role, action, entity, entity_id, entity_label, property_id, property_code, property_name, before, after, ip, user_agent, created_at}`, lo más reciente primero |
+
+Acciones registradas en esta fase: `property.created`, `.updated`, `.deleted`, `.access_viewed`,
+`.assignments_changed`, `.owners_changed`; `building.*`; `checklist_template.*`; `employee.created`,
+`.updated`, `.schedule_changed`; más las de la fase 1 (`member.*`, `invitation.*`, `role.*`,
+`tenant.settings_updated`).
+
+**Sync para la app** (cualquier sesión dentro de una empresa):
+
+| Endpoint | Respuesta |
+| --- | --- |
+| **`GET /sync/bootstrap`** | 200 `{server_time, scoped, properties[] (como GET /properties, sin acceso), buildings[], checklist_templates[] (las que usan sus propiedades), schedule[] (horario propio)}`. Sin `properties.read`, las listas vienen vacías |
+
+Las tareas se sincronizan aparte con `GET /tasks?from=&to=&updated_since=` (B). B agrega
+`inventory_items` al bootstrap cuando exista su módulo (campo nuevo en `appsync.Bootstrap`, PR pequeño).
+
+**Archivos**: tipo nuevo `properties/cover` (PNG, JPG o WebP, 5 MB; lo sube quien tiene
+`properties.manage` y lo ve quien tiene `properties.read`). El flujo es el de fase01 §3.7.2; después
+`PATCH /properties/{id}` con `cover_file_id`.
+
+**Invitaciones**: los `property_ids` de `POST /tenants/{id}/invitations` ahora se validan (422
+`body.property_ids`) y al aceptar se crean las asignaciones (o la propiedad queda como propia si el
+rol es `owner`).
+
+**Roles**: `scoped` en `GET/POST/PATCH /tenants/{id}/roles` (antes solo informativo). Quien tiene un
+rol con alcance restringido no crea ni da roles sin restricción (422 `body.scoped` / `body.role_key`).
+
+**Para B (enganches listos):**
+
+* `authz.ResolvePropertyScope(ctx, q, actor)` con `scope.SQLArgs()` filtra tareas e inventario por
+  propiedad (`WHERE ($1::bool OR t.property_id = ANY($2::uuid[]))`). `auth.Principal.Actor()` arma
+  el actor desde el handler.
+* `properties.Service.SetAccessGate(fn)`: B registra en `app/services.go` la regla de la tarea del día
+  (`fn(ctx, q, actor, propertyID) (bool, error)`). Sin ella, limpieza y mantenimiento reciben 403 al
+  pedir el acceso.
+* `audit.Record(ctx, q, audit.Entry{...})` dentro de la transacción del cambio, con `PropertyID` para
+  que aparezca en el historial de la propiedad.
+* `paging.Limit`, `paging.Decode` y `paging.Page` para las listas con cursor.
+* `optional.Value[T]` para los PATCH con null.
+* `files.Rules`: B agrega `tasks/before`, `tasks/after` y `tasks/evidence` (solo se agregan líneas).
 
 ## 5. App móvil
 

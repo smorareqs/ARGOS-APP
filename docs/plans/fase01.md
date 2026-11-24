@@ -1,6 +1,9 @@
 # Fase 1 — Fundaciones: identidad, tenants, roles y permisos
 
-> Estado: pendiente. Registrar avances y decisiones en [avance.md](avance.md).
+> Estado: backend y web completos (2026-11-21, `[A]`); falta la app (`[B]`). Contratos
+> nuevos para la app en §3.7.2. Pendiente de A: exigir 2FA por rol
+> (`require_2fa_roles`) y marcar inactivo un tenant con migraciones pendientes.
+> Registrar avances y decisiones en [avance.md](avance.md).
 
 ## 1. Objetivo
 
@@ -473,6 +476,110 @@ es `true`):
 }
 ```
 
+#### 3.7.2 Contrato de cuenta, equipo, archivos y plataforma (implementado 2026-11-21)
+
+Todo lo de esta sección ya existe en el backend (rama `dev/sebas`) y la web lo usa
+contra la API real. **La app puede consumirlo tal cual**; en negritas lo que la app
+necesita en su fase 1 (perfil, sesiones, 2FA, invitación por deep link). El OpenAPI
+vivo está en `GET /api/v1/openapi.json` y la documentación navegable en `/docs`.
+
+Convenciones adicionales a las de §3.7.1:
+
+* En endpoints autenticados, un dato incorrecto (contraseña actual, código TOTP)
+  responde **422 con `errors[].location`** (p. ej. `body.current_password`,
+  `body.code`), nunca 401: 401 sigue significando "token vencido".
+* Las listas de administración responden `{"items": [...], "next_cursor": null}`
+  (la forma paginada de fase02 §4; en esta fase todo cabe en una página).
+* Toda ruta `/tenants/{tenant_id}/...` exige que `tenant_id` sea la empresa activa
+  de la sesión; si no, **404**.
+
+**Cuenta propia** (cualquier sesión, también en modo plataforma):
+
+| Endpoint | Cuerpo | Respuestas |
+| --- | --- | --- |
+| **`PATCH /auth/me`** | `full_name?`, `phone?` (`""` lo borra) | 200 `{id, email, full_name, phone, totp_enabled, is_platform_admin}` · 422 `body.full_name` / `body.phone` |
+| **`GET /auth/sessions`** | — | 200 `[{id, device_name, platform, ip, tenant_name, last_used_at, created_at, current}]` (`tenant_name` null en modo plataforma) |
+| **`DELETE /auth/sessions/{id}`** | — | 204 · 404 si no es una sesión vigente de la persona |
+| **`DELETE /auth/sessions`** | — | 204; cierra todas menos la actual |
+| **`POST /auth/password/change`** | `current_password`, `new_password` | 204 (cierra las demás sesiones y envía correo de aviso) · 422 `body.current_password` o `body.new_password` |
+| **`POST /auth/password/forgot`** | `email` | 202 siempre. Envía el enlace `{WEB}/restablecer?token=…` (1 h, un uso). No reenvía si mandó otro hace menos de 2 min |
+| `POST /auth/password/reset` | `token`, `new_password` | 204 (cierra todas las sesiones y envía aviso) · 404 enlace vencido/usado · 422 `body.new_password` |
+| **`POST /auth/totp/setup`** | — | 200 `{secret, otpauth_url}` (base32 y enlace para el QR; queda inactivo hasta confirmar) · 422 si ya está activo |
+| **`POST /auth/totp/confirm`** | `code` | 204 · 422 `body.code` |
+| **`POST /auth/totp/disable`** | `password`, `code` | 204 · 422 `body.password` / `body.code` |
+
+Con 2FA activo, `POST /auth/login` responde 428 sin `totp_code` y 401 con un código
+incorrecto (como en §3.7.1). TOTP RFC 6238: 6 dígitos, 30 s, SHA-1, ±1 paso. El
+secreto se guarda cifrado (AES-256-GCM).
+
+**Invitaciones** (el correo lleva `{WEB}/invitacion?token=…`; la app puede abrir el
+mismo token por deep link `argos://invite?token=`):
+
+| Endpoint | Cuerpo | Respuestas |
+| --- | --- | --- |
+| **`GET /auth/invitations/{token}`** | — | 200 `{tenant_name, tenant_logo_url, role_name, email, inviter_name, user_exists, expires_at}` · 404 vencida, usada o cancelada |
+| **`POST /auth/invitations/accept`** | `token`, `password`, `full_name` (solo si `user_exists=false`), `totp_code?`, `device` | 200 respuesta de sesión (como el login, ya dentro de esa empresa) · 404 · 422 `body.password` / `body.full_name` / `body.totp_code` · 428 falta el código |
+| `GET /tenants/{id}/invitations?status=pending` | — | 200 página de `{id, email, role_key, role_name, property_ids, invited_by, status, message, created_at, expires_at}` (`users.read`; `pending` excluye vencidas) |
+| `POST /tenants/{id}/invitations` | `email`, `role_key`, `property_ids?`, `message?` (≤500) | 201 invitación · 422 `body.email` (ya es miembro o ya invitado) · 422 `body.role_key` (rol inexistente, `guest`, o con permisos que quien invita no tiene) (`users.manage`) |
+| `POST /tenants/{id}/invitations/{inv}/resend` | — | 200 invitación con enlace nuevo (el anterior deja de servir; vence en 7 días) |
+| `DELETE /tenants/{id}/invitations/{inv}` | — | 204 |
+
+**Miembros y roles de la empresa** (`users.read` para leer, `users.manage` para cambiar;
+roles: lectura con `users.read` o `roles.manage`, cambios con `roles.manage`):
+
+| Endpoint | Cuerpo | Respuestas |
+| --- | --- | --- |
+| `GET /tenants/{id}/members` | — | 200 página de `{id (membresía), user_id, full_name, email, phone, role_id, role_key, role_name, status, totp_enabled, properties_count, last_seen_at, joined_at}` |
+| `PATCH /tenants/{id}/members/{m}/role` | `role_key` | 200 miembro · 422 si deja la empresa sin administrador activo o si el rol tiene permisos que quien cambia no tiene |
+| `POST /tenants/{id}/members/{m}/suspend` · `/reactivate` | — | 200 miembro. Suspender cierra sus sesiones en esa empresa; 422 si es uno mismo o el último administrador |
+| `DELETE /tenants/{id}/members/{m}/sessions` | — | 204; cierra sus sesiones solo en esa empresa |
+| `GET /tenants/{id}/roles` | — | 200 página de `{id, key, name, description, is_system, scoped, members, permissions[]}` (sin `guest`) |
+| `POST /tenants/{id}/roles` | `name`, `description?`, `permissions[]` | 201 rol personalizado (clave derivada del nombre) · 422 `body.name` / `body.permissions` |
+| `PATCH /tenants/{id}/roles/{role}` | `name?`, `description?`, `permissions?` | 200 · 422 si es de sistema. Cambiar permisos sube `permissions_version`: los access tokens de quienes lo tienen dejan de valer |
+| `DELETE /tenants/{id}/roles/{role}` | — | 204 · 422 si es de sistema o tiene personas o invitaciones pendientes |
+
+Decisión (2026-11-21): los siete roles de sistema son de solo lectura en cada empresa
+(su matriz la mantiene ARGOS y `migrate up` la sincroniza). Las empresas ajustan
+permisos creando roles personalizados, por ejemplo duplicando uno de sistema. Nadie
+puede dar un permiso que no tiene, salvo los de alcance propio (`*.own`).
+
+**Configuración de la empresa** (`tenant.settings`):
+
+| Endpoint | Cuerpo | Respuestas |
+| --- | --- | --- |
+| `GET /tenants/{id}/settings` | — | 200 `{name, legal_name, nit, logo_url, timezone, currency, checkin_time, checkout_time, checkout_alarm_minutes, guest_instructions, features}` (por defecto 15:00 / 11:00 / 30 min) |
+| `PATCH /tenants/{id}/settings` | cualquiera de los campos anteriores salvo `logo_url` y `features`; `logo_file_id` (archivo `tenant/logo` ya confirmado) o `remove_logo: true` | 200 · 422 por campo (`body.checkin_time`, `body.timezone`…). Las banderas son de solo lectura: las cambia la plataforma |
+
+`/auth/me` y la respuesta de sesión traen ahora `logo_url` / `tenant_logo_url`
+firmados por 12 h (null si la empresa no subió logo).
+
+**Archivos** (§3.8; cualquier sesión dentro de una empresa; el permiso depende del
+tipo de archivo):
+
+| Endpoint | Cuerpo | Respuestas |
+| --- | --- | --- |
+| **`POST /files/presign-upload`** | `module`, `kind`, `content_type`, `size`, `filename?`, `entity_type?`, `entity_id?` | 200 `{file_id, upload_url, method: "PUT", headers, expires_at}` · 403 sin permiso · 422 tipo, formato o tamaño no permitidos |
+| (subida) | `PUT upload_url` con `headers` (Content-Type) y el archivo tal cual | 200 de S3. Tipo y tamaño van firmados: otro archivo falla |
+| **`POST /files/{id}/confirm`** | — | 200 `{id, module, kind, content_type, size_bytes, status: "ready", created_at}` · 422 si aún no se subió o no coincide |
+| **`GET /files/{id}/url`** | — | 200 `{url, expires_at}` (5 min) · 404 |
+
+Tipos registrados en esta fase: `tenant/logo` (PNG, JPG o WebP, 2 MB, sube quien tiene
+`tenant.settings`). Cada fase agrega los suyos en `internal/modules/files` (`Rules`):
+la app de B pedirá, por ejemplo, `tasks/before` y `tasks/after` en la fase 2.
+Diferencia con el plan: la subida es un PUT prefirmado con `Content-Length` firmado
+(equivale a la condición de tamaño del POST) porque es más simple desde la app y el
+navegador.
+
+**Plataforma** (`RequirePlatformAdmin`, sesión en modo plataforma):
+
+| Endpoint | Cuerpo | Respuestas |
+| --- | --- | --- |
+| `POST /auth/select-tenant` | `platform: true` + `selection_token` y `device`, o `refresh_token` | Entra a la administración de ARGOS (sin empresa). 404 si la persona no es platform_admin. La respuesta de login trae `platform_admin: true` cuando aplica |
+| `GET /platform/tenants` | — | 200 `[{id, name, slug, schema_name, is_active, timezone, currency, logo_url, features, members, active_members, last_activity, created_at, updated_at}]` |
+| `POST /platform/tenants` | `name`, `slug`, `timezone?`, `features?`, `admin_email?` | 201. Con `admin_email`: si ya tiene cuenta queda como admin; si no, recibe una invitación. 409 slug repetido · 422 por campo |
+| `PATCH /platform/tenants/{id}` | `name?`, `is_active?`, `features?` | 200. `is_active: false` suspende la empresa y cierra todas sus sesiones |
+| `GET /platform/audit?tenant_id=&action=&limit=&offset=` | — | 200 página de `{id, actor_name, actor_email, tenant_name, action, entity, entity_id, metadata, ip, created_at}` |
+
 ### 3.8 Servicio de archivos (S3)
 
 `internal/core/storage` → `storage.Service`:
@@ -511,6 +618,17 @@ versionado desactivado, regla de ciclo de vida para abortar multipart huérfanos
   estándar del SDK (rol IAM en despliegue; variables en local).
 * `docker-compose.yml`: agregar servicio `worker` (misma imagen, comando `argos worker`) y
   `localstack` (S3 + SES simulados) solo para desarrollo.
+  **Hecho así (2026-11-21):** servicio `worker` con hot-reload (`.air.worker.toml`) y
+  `rustfs` (`rustfs/rustfs:1.0.5`, emulador S3, consola en :9001) en lugar de LocalStack:
+  la imagen gratuita de MinIO dejó de publicarse y LocalStack pesa más de 1 GB. SES no
+  se emula: con `ARGOS_MAIL_DRIVER=log` cada correo queda en el log del worker y como
+  HTML en `BACKEND/tmp/mail/` (ahí están los enlaces de invitación y de contraseña).
+  Variables nuevas: `ARGOS_S3_PUBLIC_ENDPOINT_URL` (host con que se firman las URLs que
+  abre el navegador o la app), `ARGOS_S3_ACCESS_KEY` y `ARGOS_S3_SECRET_KEY` (solo el
+  emulador), `ARGOS_MAIL_DRIVER`, `ARGOS_MAIL_DIR`. En local y pruebas, si falta
+  `ARGOS_FIELD_ENCRYPTION_KEY` se deriva de `ARGOS_SECRET_KEY`; en staging y producción
+  es obligatoria. Para que la app en un emulador Android suba archivos, el host público
+  debe ser alcanzable desde el teléfono (p. ej. `http://10.0.2.2:9000`).
 
 ### 3.10 Pruebas obligatorias
 
