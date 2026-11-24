@@ -130,7 +130,7 @@ acuerdo y quien lo modifica lo anota en avance.md.
 
 | | Persona A | Persona B |
 | --- | --- | --- |
-| Migraciones | `shared/0003_billing`: plans, subscriptions, invoices, payments, payment_events, api_keys | `tenant/0010_chat_locks`: conversations, conversation_participants, messages, lock_devices, lock_access_codes |
+| Migraciones | `shared/0005_billing`: plans, subscriptions, invoices, payments, payment_events, api_keys | `tenant/0010_chat_locks`: conversations, conversation_participants, messages, lock_devices, lock_access_codes |
 | Módulos backend | `billing` (`PaymentProvider`, `FakeProvider`, job `billing_cycle`, modo solo lectura 402 en `dependencies.go`, webhooks), `api_keys` + `public` (`POST /public/reservations` real), generador de pruebas de aislamiento por endpoint, rate limiting, `/health/ready` | `chat` (conversaciones, mensajes, WS, push de mensajes, creación automática para huéspedes), `locks` (`LockProvider`, `FakeLockProvider`, jobs `lock_provision` y `lock_revoke`), jobs de retención completos y observabilidad del worker |
 | Frontend | WEB: W-M1 (chat-panel, consume API de B), W-O4, W-P2–W-P3, guía de operación | APP: B22–B23, F8, código de cerradura en F1 |
 | Hito de integración | Chat huésped ↔ web en tiempo real; tenant suspendido en solo lectura en app y web | |
@@ -141,7 +141,9 @@ acuerdo y quien lo modifica lo anota en avance.md.
 | Entorno | Revisión | Dueño | Fase |
 | --- | --- | --- | --- |
 | shared | `0002_identity` | A | 1 |
-| shared | `0003_billing` | A | 6 |
+| shared | `0003_role_scope` | A | 2 |
+| shared | `0004_btree_gist` | A | 4 |
+| shared | `0005_billing` | A | 6 |
 | tenant | `0001_tenant_base` | A | 1 |
 | tenant | `0002_properties` | A | 2 |
 | tenant | `0003_tasks_inventory` | B | 2 |

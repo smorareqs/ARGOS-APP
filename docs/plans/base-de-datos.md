@@ -32,15 +32,17 @@
 | --- | --- | --- | --- |
 | shared | `0001_initial` (existente) | `tenants`, `users` | — |
 | shared | `0002_identity` | modifica `tenants` y `users`; crea `roles`, `role_permissions`, `memberships`, `refresh_tokens`, `one_time_tokens`, `invitations`, `device_tokens`, `jobs`, `platform_audit_log`; migra datos | 1 |
-| shared | `0003_billing` | `plans`, `subscriptions`, `invoices`, `payments`, `payment_events`, `api_keys` | 6 |
+| shared | `0003_role_scope` | agrega `roles.scoped` (alcance por asignación de cada rol) | 2 |
+| shared | `0004_btree_gist` (A, hecha) | extensión `btree_gist` en el schema `shared` (la usa el `EXCLUDE` que impide reservas cruzadas) | 4 |
+| shared | `0005_billing` (A, hecha) | `plans` (siembra Inicio, Operación y Completo), `subscriptions` (una por empresa; las existentes quedan activas en Completo), secuencia `invoice_number_seq`, `invoices`, `payments` (con `failure_reason`), `payment_events` (uq `(provider, event_id)`), `api_keys` (solo el hash) | 6 |
 | tenant | `0001_tenant_base` | `files`, `audit_log` | 1 |
-| tenant | `0002_properties` (A) | `buildings`, `properties`, `property_owners`, `property_assignments`, `employees`, `employee_schedules`, `checklist_templates`, `checklist_template_items` | 2 |
+| tenant | `0002_properties` (A, hecha) | `buildings`, `properties`, `property_owners`, `property_assignments`, `employees`, `employee_schedules`, `checklist_templates`, `checklist_template_items` | 2 |
 | tenant | `0003_tasks_inventory` (B) | `tasks`, `task_checklist_items`, `task_events`, `task_consumptions`, `warehouses`, `inventory_items`, `inventory_stock`, `inventory_movements`, `employee_custody`, `inventory_discrepancies`, `restock_requests` | 2 |
-| tenant | `0004_maintenance` (A) | `vendors`, `assets`, `maintenance_plans`, `maintenance_tickets`, `ticket_events`, `alerts` | 3 |
+| tenant | `0004_maintenance` (A, hecha) | `vendors`, `assets`, `maintenance_plans`, `maintenance_tickets`, `ticket_events`, `alerts`; agrega `files.original_name` | 3 |
 | tenant | `0005_notifications` (B) | `notifications`, `notification_preferences` | 3 |
-| tenant | `0006_reservations` (A) | `booking_channels`, `property_ical_feeds`, `guests`, `reservations`, `reservation_guests`, `reservation_events`, `deposit_transactions`, `inspections`, `inspection_findings`; agrega FK `tasks.reservation_id` y `maintenance_tickets.reported_by_guest_id` | 4 |
+| tenant | `0006_reservations` (A, hecha) | `booking_channels` (siembra Directo, Booking.com y Airbnb), `property_ical_feeds`, `guests` (con `blacklist_reason`), `reservations` (con `manual_fields`, `external_summary` y `EXCLUDE` de cruce por propiedad), `reservation_guests`, `reservation_events`, `deposit_transactions`, `inspections` (una por tipo), `inspection_findings` (con `ticket_id`); agrega FK `maintenance_tickets.reported_by_guest_id`, y `tasks.reservation_id` e `inspections.task_id` si `tasks` ya existe | 4 |
 | tenant | `0007_guest_parking_areas` (B) | `guest_access_tokens`, `security_alarms`, `parking_spots`, `parking_assignments`, `shared_areas`, `shared_area_bookings` | 4 |
-| tenant | `0008_payroll` (A) | `payroll_settings`, `payroll_periods`, `payroll_entries`, `disciplinary_actions` | 5 |
+| tenant | `0008_payroll` (A, hecha) | `payroll_settings` (una fila con tasas IGSS, bonificación incentivo, meses de Bono 14 y aguinaldo, horas y minutos por día), `payroll_periods` (con `EXCLUDE` de cruce por `kind`, máx. 62 días, `export_file_id`), `payroll_entries` (foto del colaborador, `attendance_source`, montos con `incentive_bonus_amount`, `bonus_detail`, `manual_fields`, `history`, `notes`, `payslip_file_id`), `disciplinary_actions` (tipo, fechas de suspensión con CHECK, acuse con nota; adjuntos en `files`) | 5 |
 | tenant | `0009_attendance_metrics` (B) | `attendance_records`, `performance_snapshots`, `goals`, `incentive_awards` | 5 |
 | tenant | `0010_chat_locks` (B) | `conversations`, `conversation_participants`, `messages`, `lock_devices`, `lock_access_codes` | 6 |
 
@@ -68,9 +70,9 @@ Orden de aplicación en cada despliegue: `argos migrate up` aplica `shared` y lu
 | `jobs` | Cola de trabajos | `tenant_id` null, `type`, `payload`, `status`, `scheduled_at`, `attempts`, `locked_at`, `locked_by`, `dedupe_key` uq parcial; ix `(status, scheduled_at)` | fase01 §3.3 |
 | `platform_audit_log` | Bitácora de plataforma | `actor_user_id`, `tenant_id`, `action`, `entity`, `entity_id`, `metadata`; solo INSERT | fase01 §3.3 |
 | `plans` | Planes comerciales | `key` uq, precios, `limits` jsonb | fase06 §3.1 |
-| `subscriptions` | Suscripción por tenant | `tenant_id` uq, `plan_id`, `status`, período, `grace_days`, ids del proveedor | fase06 §3.1 |
+| `subscriptions` | Suscripción por tenant | `tenant_id` uq, `plan_id`, `cycle`, `status` (suspended y cancelled = solo lectura), período, `trial_ends_at`, `grace_days`, ids del proveedor, `payment_method`, `cancel_at_period_end`, `status_changed_at` | fase06 §3.4 |
 | `invoices`, `payments`, `payment_events` | Facturas, pagos y webhooks | `number` uq; `event_id` uq | fase06 §3.1 |
-| `api_keys` | Claves para integraciones | `tenant_id`, `key_hash` uq, `scopes`, `revoked_at` | fase06 §4.1 |
+| `api_keys` | Claves para integraciones | `tenant_id`, `name`, `key_prefix`, `key_hash` uq (SHA-256), `scopes`, `last_used_at`, `revoked_at`, `created_by` | fase06 §4.3 |
 
 ## 4. Schema de tenant, por módulo
 
@@ -78,7 +80,7 @@ Orden de aplicación en cada despliegue: `argos migrate up` aplica `shared` y lu
 
 | Tabla | Propósito | Claves |
 | --- | --- | --- |
-| `files` | Todo archivo en S3 | `s3_key` uq con prefijo `tenants/{tenant_id}/`, `module`, `kind`, `entity_type`+`entity_id`, `status` (pending/ready/deleted), `expires_at` para retención |
+| `files` | Todo archivo en S3 | `s3_key` uq con prefijo `tenants/{tenant_id}/`, `module`, `kind`, `entity_type`+`entity_id`, `status` (pending/ready/deleted), `expires_at` para retención, `original_name` (fase 3) |
 | `audit_log` | Bitácora del tenant | `actor_user_id`/`actor_guest_id`, `action`, `entity`, `entity_id`, `property_id`, `before`, `after`; solo INSERT |
 
 ### 4.2 Propiedades y personal (fase 2)
@@ -118,14 +120,14 @@ Orden de aplicación en cada despliegue: `argos migrate up` aplica `shared` y lu
 
 | Tabla | Propósito | Relaciones |
 | --- | --- | --- |
-| `vendors` | Proveedores externos | — |
-| `assets` | Activos por propiedad o edificio | `property_id`/`building_id` (uno obligatorio), `vendor_id`, `status`; documentos por `files` |
+| `vendors` | Proveedores externos | uq `lower(name)` |
+| `assets` | Activos por propiedad o edificio | `property_id`/`building_id` (exactamente uno, CHECK), `vendor_id`, `category`, `status`; documentos por `files(entity_type='asset', kind='asset_document')` |
 | `maintenance_plans` | Preventivos | `asset_id`, `frequency_days`, `next_due_at`, `responsible_user_id`/`vendor_id` |
-| `maintenance_tickets` | Incidencias | `property_id`, `asset_id`, `plan_id`, `reported_by_user_id`/`reported_by_guest_id`, `assigned_to`, `vendor_id`, `task_id` |
+| `maintenance_tickets` | Incidencias | `number` (folio, uq), `property_id`/`building_id` (al menos uno), `asset_id`, `plan_id` (uq parcial: una abierta por preventivo), `reported_by_user_id`/`reported_by_guest_id`, `assigned_to`, `vendor_id`, `task_id` (FK a `tasks` si existe); fotos por `files(entity_type='maintenance_ticket')` |
 | `ticket_events` | Línea de tiempo | solo INSERT |
 | `notifications` | Bandeja por usuario o huésped | `recipient_user_id`/`recipient_guest_id`, `type`, `channels`, `read_at` |
 | `notification_preferences` | Opt-out por tipo | PK `(user_id, type)` |
-| `alerts` | Panel de alertas | `type`, `severity`, `entity_type`+`entity_id`, `status`; uq parcial activa por entidad |
+| `alerts` | Panel de alertas | `type`, `severity`, `entity_type`+`entity_id`, `property_id`, `status`, `acknowledged_by`, `resolved_by`; uq parcial `(type, entity_type, entity_id)` mientras no esté resuelta |
 
 ### 4.6 Reservas y hospitalidad (fase 4)
 
@@ -149,9 +151,9 @@ Orden de aplicación en cada despliegue: `argos migrate up` aplica `shared` y lu
 | Tabla | Propósito | Relaciones |
 | --- | --- | --- |
 | `attendance_records` | Marcajes | `employee_id`; un abierto por empleado (uq parcial) |
-| `payroll_settings` | Tasas y parámetros | una fila |
+| `payroll_settings` | Tasas y parámetros | una fila (`id = 1`) |
 | `payroll_periods` | Períodos | `status` draft/review/closed; EXCLUDE solapamiento por `kind` |
-| `payroll_entries` | Una fila por colaborador y período | uq `(period_id, employee_id)`; snapshot de esquema; montos |
+| `payroll_entries` | Una fila por colaborador y período | uq `(period_id, employee_id)`; snapshot de esquema; montos; historial de correcciones en `history` (jsonb); boleta en `payslip_file_id` |
 | `disciplinary_actions` | Llamadas de atención y suspensiones | `employee_id`, `issued_by`, `acknowledged_at`; adjuntos por `files` |
 | `performance_snapshots` | Métricas diarias materializadas | uq `(employee_id, date)` |
 | `goals`, `incentive_awards` | Metas e incentivos | award → `payroll_entry_id` |

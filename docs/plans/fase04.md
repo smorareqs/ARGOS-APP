@@ -1,7 +1,13 @@
 # Fase 4 — Reservas, huéspedes, seguridad, parqueos y áreas comunes
 
-> Estado: pendiente. Requiere fase 3 (notificaciones). Habilitada por la bandera
-> `reservations` del tenant; `parking` y `shared_areas` tienen bandera propia.
+> Estado: en curso. Parte de Persona A **hecha** (2026-11-22): migraciones `shared/0004_btree_gist`
+> y `tenant/0006_reservations`, módulo `reservations` (canales, iCal, reservas, huéspedes,
+> depósitos e inspecciones), trabajos `ical_sync`, `reservation_status`, `reservation_reminder` y
+> `retention_cleanup`, correos al huésped y eventos `reservation.*`, con la web conectada (W-H1 a
+> W-H6; W-I1 y W-I2 siguen simuladas hasta que exista la API de B). Contrato en §4.1. Pendiente
+> (Persona B): `tenant/0007_guest_parking_areas`, acceso de huéspedes, seguridad, parqueos, áreas
+> comunes y la app. Habilitada por la bandera `reservations` del tenant; `parking` y
+> `shared_areas` tienen bandera propia.
 
 ## 1. Objetivo
 
@@ -222,6 +228,164 @@ daterange(check_in_date, check_out_date) WITH &&) WHERE (status NOT IN
 | `GET /security/dashboard?date=`, `GET /security/alarms`, `POST /security/alarms/{id}/attend` | `security.dashboard` |
 | `POST /guest/auth`, `GET /guest/me`, `GET /guest/reservation`, `POST /guest/shared-areas/{id}/bookings`, `GET /guest/parking`, `POST /guest/tickets`, `POST /guest/device` | principal `guest` |
 | `POST /public/reservations` | clave API del tenant (fase 6 formaliza `api_keys`; aquí queda definido el contrato) |
+
+### 4.1 Contrato implementado (Persona A, 2026-11-22)
+
+Todo bajo `/api/v1`, con la bandera `reservations` (sin ella: 403 "Este módulo no está activo en tu
+empresa."). Errores con el formato de siempre (`detail` y `errors[].location`/`message` en español).
+Fechas `YYYY-MM-DD` en la zona del tenant; la salida es exclusiva (sale el 24 y otra entra el 24 sin
+cruce). Horas `HH:MM`. Montos en la moneda del tenant. OpenAPI completo en `/docs`.
+
+**Canales** (`reservations.read` para leer, `reservations.manage` para escribir)
+
+* `GET /channels` → `ChannelRead[]`: `id, name, kind (direct|booking|airbnb|agency|other),
+  requires_deposit, has_checkin, default_deposit_amount, is_active, feeds_count, upcoming_count`.
+  El seed crea Directo (depósito y check-in), Booking.com y Airbnb (sin ninguno de los dos).
+* `POST /channels` `{name, kind, requires_deposit, has_checkin, default_deposit_amount?}`;
+  `PATCH /channels/{id}` (mismos campos y `is_active`). Nombre único sin distinguir mayúsculas (422).
+
+**Calendarios iCal** (`reservations.manage`)
+
+* `GET /ical-feeds` (todos) y `GET /properties/{id}/ical-feeds` → `FeedRead`: `id, property_id,
+  property_code, property_name, channel_id, channel_name, channel_kind, url, is_active,
+  last_synced_at, last_success_at, last_error, events_count`.
+* `POST /properties/{id}/ical-feeds` `{channel_id, url}` (uno por propiedad y canal: 422),
+  `PATCH /ical-feeds/{id}` `{url?, is_active?}`, `DELETE /ical-feeds/{id}` (las reservas importadas
+  se quedan).
+* `POST /ical-feeds/sync` (todas) y `POST /ical-feeds/{id}/sync` → `SyncResult[]`: `feed_id,
+  property_code, channel_name, ok, error, events, created, updated, cancelled, conflicts`.
+* URL solo `https` y a IP pública (el fetcher valida cada IP resuelta y cada redirección: sin SSRF);
+  en el entorno local se aceptan `http` e IP privadas para los calendarios de prueba
+  `GET /dev/ical/{archivo}` que sirve la API (no existe fuera de local).
+* `last_error` va en palabras: "El canal respondió 404.", "No es un calendario iCal.", y los
+  cruces: "No se importaron eventos que se cruzan con reservas de ARGOS: …".
+
+**Reservas** (`reservations.read` con alcance; escribir con `reservations.manage`)
+
+* `GET /reservations?from&to&property_id&channel_id&guest_id&status&incomplete&q&order&cursor&limit`
+  → `{items: ReservationRead[], next_cursor}`. `ReservationRead`: `id, code (ARG-XXXXXX),
+  property_id/code/name, channel_id/name/kind, requires_deposit, has_checkin, source
+  (manual|ical|api), external_ref, external_summary, primary_guest_id, guest_name, guest_email,
+  guests_count, guests_pending, status (pending|confirmed|checked_in|checked_out|cancelled|no_show),
+  incomplete, check_in_date, check_out_date, check_in_time, check_out_time, nights, checked_in_at,
+  checked_out_at, adults, children, total_amount, currency, deposit_amount, deposit_status
+  (none|pending|received|returned|retained_partial|retained_full), notes, cancelled_at,
+  cancel_reason, created_at, updated_at`.
+* `GET /reservations/today` → `{available, arrivals, departures, in_house, incomplete,
+  checkin_time}` (lo usa el Inicio). `GET /reservations/{id}` → `ReservationDetail` = lo anterior más
+  `guests[]` (con `documents[]` si hay `guests.read`), `deposit`, `inspections[]` y `events[]`
+  (línea de tiempo).
+* `POST /reservations` `{property_id, channel_id, check_in_date, check_out_date, check_in_time?,
+  check_out_time?, adults, children, total_amount?, deposit_amount?, primary_guest_id? | guest?
+  (GuestCreate), notes?, send_email}` → `ReservationDetail` 201. Con huésped queda `confirmed` (y
+  manda el correo si `send_email`); sin él, `pending`. Sin `deposit_amount`, toma el del canal si
+  pide depósito.
+* `PATCH /reservations/{id}` (fechas, horas, canal, personas, montos, notas). Cambiar fechas de una
+  importada las marca como manuales: el iCal ya no las mueve.
+* `POST /reservations/{id}/confirm` `{send_email}` (exige huésped principal: 422),
+  `/cancel` y `/no-show` `{reason}` (motivo obligatorio), `/check-in` y `/check-out`
+  (`reservations.checkin`), `/resend` (reenvía la confirmación; 422 sin correo).
+* Cruce de fechas: lo rechaza la BD (`EXCLUDE` con `btree_gist`) y la API responde 422 con
+  `errors[0].location = "body.check_in_date"` y "Se cruza con ARG-… de Nombre (5 dic al 8 dic)."
+* Check-in en canales con `has_checkin`: todos los huéspedes registrados (documento y las dos
+  fotos) y, si hay depósito, recibido. En canales sin check-in formal, entrada y salida pasan solas
+  a su hora (trabajo `reservation_status`).
+
+**Huéspedes**
+
+* `GET /guests?q&blacklisted&cursor&limit` y `GET /guests/{id}` (`guests.read`) → `GuestRead`:
+  `id, full_name, email, phone, document_type (dpi|passport), document_number, nationality, notes,
+  blacklisted, blacklist_reason, stays, last_stay, next_stay, created_at, updated_at`; la ficha suma
+  `documents[]` y `reservations[]`.
+* `POST /guests` (`guests.manage`) y `PATCH /guests/{id}` (`guests.manage` o
+  `reservations.checkin`; la lista negra solo con `guests.manage`: 403). Documento repetido:
+  `POST /guests` responde 422 ("Ya hay un huésped con ese documento."); el `guest` que viene dentro de
+  una reserva reutiliza al huésped existente (no se duplica). DPI: 13 dígitos; pasaporte: 5 a 20
+  alfanuméricos.
+* `POST /reservations/{id}/guests` `{guest_id? | guest?, is_primary}` y
+  `DELETE /reservations/{id}/guests/{guest_id}` (`guests.manage` o `reservations.checkin`). Un
+  huésped en lista negra no se puede agregar (422).
+* Fotos del documento: se suben con `POST /files/uploads` (módulo `guests`, tipos `id_front` e
+  `id_back`, permiso `reservations.checkin`) y se ligan con `POST /guests/{id}/documents`
+  `{kind, file_id}` (reemplaza la anterior del mismo lado). Para verlas:
+  `GET /guests/{id}/documents/{file_id}/url` (`guests.documents`) → `{url, expires_at}`, que queda en
+  la bitácora como `guest.document_viewed`. `GET /files/{id}/url` las rechaza. Vencen 90 días después
+  de la última salida y `retention_cleanup` las borra de S3 (el número de documento se queda).
+
+**Depósito** (`deposits.read` / `deposits.manage`)
+
+* `GET /reservations/{id}/deposit` → `{available, amount, status, received, returned, retained,
+  balance, charges, inspection_required, transactions[]}` (`charges` = costo de los hallazgos con
+  cargo al depósito).
+* `POST /reservations/{id}/deposit/transactions` `{type (received|returned|retained), amount, method
+  (cash|card|transfer|other), reference?, notes?}`. Recibir hasta el monto; devolver o retener solo
+  con la inspección `post_departure`; retener solo si hay hallazgos con cargo al depósito y hasta su
+  costo; con cargos, primero se retiene y luego se devuelve el resto. El estado se recalcula de los
+  movimientos y cada uno manda correo al huésped.
+
+**Inspecciones** (`tasks.validate`)
+
+* `POST /reservations/{id}/inspections` `{kind (pre_arrival|post_departure), notes?, task_id?,
+  photo_file_ids[]}`: una por tipo; `pre_arrival` antes del check-in y `post_departure` después del
+  check-out. Fotos con `POST /files/uploads` (módulo `reservations`, tipo `inspection_photo`).
+* `POST /inspections/{id}/findings` `{area, description, severity (low|medium|high),
+  estimated_cost?, charge_to_deposit, photo_file_ids[], create_ticket}`: con `create_ticket` abre la
+  incidencia en Mantenimiento (`ticket_id` y `ticket_number` en la respuesta).
+  `DELETE /inspections/{id}/findings/{finding_id}` (no si el depósito ya se liquidó).
+
+**Visibilidad**
+
+* Alcance por propiedad como en el resto (404 fuera de alcance).
+* Seguridad (`security.dashboard` sin `reservations.manage` ni `reservations.checkin`): solo
+  reservas con entrada o salida hoy y las que están en casa.
+* Correo, teléfono y documentos del huésped solo con `guests.read`; URL de las fotos solo con
+  `guests.documents`.
+
+**Eventos** (`events.Bus`, síncronos dentro de la transacción; `Data` es
+`reservations.ReservationEvent{Reservation ReservationRead, Previous *ReservationRead}`)
+
+* `reservation.confirmed`, `reservation.updated` (con `Previous`), `reservation.cancelled` (también
+  `no_show`), `reservation.checked_in`, `reservation.checked_out`.
+
+**Enganches para B**
+
+* `reservations.Service.SetGuestAccess(fn GuestAccessIssuer)`: se llama al confirmar (y al reenviar),
+  dentro de la transacción, y devuelve `AccessInfo{Link, Code}` que va en el correo
+  (`argos://guest?token=…` y el código). Sin él, el correo sale sin enlace ni código.
+* Tarea de limpieza: suscribirse a `reservation.confirmed` (crear la tarea `cleaning` del día de
+  salida con `reservation_id`), a `reservation.updated` (moverla si cambió la salida) y a
+  `reservation.cancelled` (cancelarla).
+* Alarmas de seguridad: programar `security_alarms` con `reservation.confirmed` y
+  `reservation.updated`; cancelarlas con `reservation.cancelled` y `reservation.checked_out`.
+* `inspections.task_id` y `tasks.reservation_id` ya tienen FK si la tabla `tasks` existe (la
+  migración las agrega condicionalmente).
+* `maintenance_tickets.reported_by_guest_id` ya apunta a `guests` para `POST /guest/tickets`.
+
+**Trabajos y correos**
+
+* `ical_sync` cada 30 min y `reservation_status` cada hora, por empresa con la bandera
+  `reservations`. `reservation_reminder` se programa al confirmar para la víspera a las 18:00 de la
+  zona del tenant (dedupe por reserva y fecha). `retention_cleanup` cada hora, de plataforma.
+* Plantillas `reservation_confirmed`, `reservation_reminder`, `reservation_cancelled` y
+  `deposit_update`. Las instrucciones del tenant aceptan `{{huesped}}`, `{{propiedad}}`,
+  `{{fecha_entrada}}` y `{{hora_entrada}}`.
+
+**`POST /public/reservations`** (solo contrato; la clave API llega en fase 6): mismo cuerpo que
+`POST /reservations` más `external_ref` (obligatorio y único por propiedad; la BD ya tiene el índice
+`(property_id, external_ref)`), y la reserva queda con `source = "api"`. Respuesta `ReservationRead`
+201; un reintento con el mismo `external_ref` devuelve la existente con 200 sin duplicar; 422 si se
+cruza.
+
+**Diferencias con el plan**
+
+* El documento del huésped es opcional al crear (se exige en el registro del check-in).
+* Columnas de más: `guests.blacklist_reason`, `reservations.manual_fields` (en lugar de
+  `synced_fields` en eventos) y `reservations.external_summary` (lo que trae el iCal).
+* Una inspección por tipo por reserva; un solo paquete `reservations` (canales, huéspedes,
+  depósitos e inspecciones juntos).
+* Estados automáticos en canales sin check-in formal; los trabajos corren cada hora como en fase 3.
+* El iCal se lee con un parser propio (`internal/core/ical`), sin dependencia nueva.
+* `btree_gist` va en `shared/0004_btree_gist`; la facturación de fase 6 pasa a `shared/0005_billing`.
 
 ## 5. App móvil
 
