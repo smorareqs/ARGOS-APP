@@ -628,3 +628,34 @@ Para B (chat, cerraduras, retención y la app), lo que ya puede consumir o usar:
     `GET/PUT /chat/quick-replies`, se conecta.
 * La guía de operación (`BACKEND/docs/operacion.md`) tiene una sección para los trabajos de B
   (retención, cerraduras) por completar.
+
+* [A] **Pulido visual de la web (2026-11-23).** Íconos con volumen propios (`app-dim-icon`, 19
+  objetos con luz, sombra y un gesto al pasar el cursor; ref. Airbnb 2025) en los indicadores, las
+  alertas del Inicio, los estados vacíos y el tipo de propiedad (tarjeta, ficha, alta con tarjetas de
+  tipo). Mapa del Inicio rehecho con geografía real de Guatemala (costa, lagos, volcanes con humo,
+  ríos, carreteras, calles y lugares al acercar) y las propiedades en sus coordenadas: vuelo inicial,
+  arrastre, zoom (Ctrl + rueda, doble clic, pellizco), grupos con anillo de estados que se separan,
+  edificios como píldora, tarjeta flotante y filtros por estado. Detalle en WEB/docs/DISENO.md.
+* [A] `GET /dashboard`: cada pin trae además `type` y `building` (fase03 §4.1). OpenAPI exportado de
+  nuevo.
+
+Para B: la app puede usar `pins[].type` y `pins[].building` del Inicio si dibuja un mapa; nada
+cambió en los campos que ya existían.
+
+* [A] **Segunda vuelta visual de la web (2026-11-24).** Barra de secciones con íconos con volumen
+  (28 objetos), menú en mosaicos de color, mapa real Google Maps 3D en el Inicio (con respaldo
+  ilustrado), íconos que sobresalen de las tarjetas, inclinación 3D al pasar el cursor, portadas
+  en estilo acuarela y tinta, y menos texto. Detalle en WEB/docs/DISENO.md.
+* [A] `GET /client-config` (sesión iniciada): `{maps: {provider: google|none, api_key?, map_id?}}`
+  desde `ARGOS_GOOGLE_MAPS_KEY` / `ARGOS_GOOGLE_MAPS_MAP_ID`. Guía en BACKEND/docs/operacion.md §4.1.
+
+Para B: la app puede leer `GET /client-config`, pero para Android/iOS conviene su propia clave de
+Maps SDK restringida a la app (la del navegador está restringida por dominio).
+
+* [A] **Tercera vuelta visual (2026-11-24).** Mapa del Inicio en Google Maps 3D vectorial (modo
+  ROADMAP, más compacto; satélite opcional) con clave propia en el proyecto THEMIS de Google Cloud.
+  Inventario: la lista de artículos muestra nivel contra mínimo y estado; cuatro íconos nuevos de
+  objetos de inventario. Detalle en WEB/docs/DISENO.md.
+* [A] **Mantenimiento visual (2026-11-24).** Activos e Incidencias (vista de tabla) como listas
+  visuales con el objeto de cada categoría; nueve íconos con volumen de activos. El mapa del Inicio
+  ya no gira al seleccionar una propiedad.
