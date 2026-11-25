@@ -276,7 +276,7 @@ empresa). `entity_type` dice a qué lleva: `asset`, `maintenance_plan`, `mainten
 
 **Inicio** (`GET /dashboard`, cualquier sesión de empresa): `{date (hoy en la zona de la empresa),
 alerts (summary), top_alerts[] (hasta 3, altas primero), incidents{open, urgent, unassigned}, upcoming[]
-(preventivos de los próximos 30 días y vencidos, hasta 5), pins[{id, code, name, zone, lat, lng,
+(preventivos de los próximos 30 días y vencidos, hasta 5), pins[{id, code, name, type, building, zone, lat, lng,
 open_tickets, status}], activity[] (8 entradas de bitácora), tasks{available, done, total, in_progress,
 late, pending, in_field, ranking[]}}`. Cada bloque respeta el alcance y viene vacío sin su permiso
 (alerts.read, maintenance.read, audit.read, properties.read). `tasks.available = false` mientras B no
