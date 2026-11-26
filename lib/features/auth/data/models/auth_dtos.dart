@@ -88,6 +88,8 @@ Session sessionFromMeJson(Map<String, dynamic> json) {
       timezone: tenant['timezone'] as String? ?? 'America/Guatemala',
       currency: tenant['currency'] as String? ?? 'GTQ',
       features: {for (final e in features.entries) e.key: e.value == true},
+      readOnly: tenant['read_only'] == true,
+      billingStatus: tenant['billing_status'] as String? ?? 'active',
     ),
     roleKey: role['key'] as String,
     roleName: role['name'] as String,

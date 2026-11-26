@@ -70,6 +70,7 @@ class ApiException implements Exception {
   static String _defaultDetail(int status, Duration? retryAfter) {
     return switch (status) {
       401 => 'Tu sesión no es válida. Ingresa de nuevo.',
+      402 => 'La empresa está en solo lectura por un pago pendiente. No se guardó el cambio.',
       403 => 'No tienes acceso a esto.',
       404 => 'No encontramos lo que buscas.',
       429 when retryAfter != null && retryAfter.inMinutes >= 1 =>

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:argos_app/core/network/connectivity_service.dart';
 import 'package:argos_app/core/network/mock/mock_backend.dart';
 import 'package:argos_app/features/auth/data/mock/auth_mock_routes.dart';
+import 'package:argos_app/features/chat/data/mock/chat_mock_routes.dart';
 import 'package:argos_app/features/hospitality/data/mock/hospitality_mock_routes.dart';
 import 'package:argos_app/features/hr/data/mock/hr_mock_routes.dart';
 import 'package:argos_app/features/notifications/data/mock/notifications_mock_routes.dart';
@@ -28,6 +29,7 @@ MockBackend mockBackend(Ref ref) {
   registerTicketsMockRoutes(backend);
   registerHospitalityMockRoutes(backend);
   registerHrMockRoutes(backend);
+  registerChatMockRoutes(backend);
 
   // El backend simulado vive en memoria: sin esto respondería aunque el
   // teléfono esté en modo avión. Así se prueban los estados sin conexión.

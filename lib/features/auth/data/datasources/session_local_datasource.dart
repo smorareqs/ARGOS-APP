@@ -42,7 +42,12 @@ class SessionLocalDataSource {
             roleKey: session.roleKey,
             roleName: session.roleName,
             permissionsJson: jsonEncode(session.permissions.toList()),
-            featuresJson: jsonEncode(session.tenant.features),
+            // El estado del pago va en el mismo JSON con claves `_…`.
+            featuresJson: jsonEncode({
+              ...session.tenant.features,
+              if (session.tenant.readOnly) '_read_only': true,
+              if (session.tenant.pastDue) '_past_due': true,
+            }),
             membershipsJson: jsonEncode(
               session.memberships.map(membershipToJson).toList(),
             ),
@@ -70,7 +75,12 @@ class SessionLocalDataSource {
         logoUrl: row.tenantLogoUrl,
         timezone: row.timezone,
         currency: row.currency,
-        features: {for (final e in features.entries) e.key: e.value == true},
+        features: {
+          for (final e in features.entries)
+            if (!e.key.startsWith('_')) e.key: e.value == true,
+        },
+        readOnly: features['_read_only'] == true,
+        billingStatus: features['_past_due'] == true ? 'past_due' : 'active',
       ),
       roleKey: row.roleKey,
       roleName: row.roleName,

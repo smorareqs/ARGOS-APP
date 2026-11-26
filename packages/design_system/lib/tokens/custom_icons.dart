@@ -43,6 +43,10 @@ abstract final class CustomIcons {
   static const IconData reports = Icons.assessment_outlined;
   static const IconData more = Icons.more_horiz_rounded;
   static const IconData chat = Icons.chat_bubble_outline_rounded;
+  static const IconData send = Icons.send_rounded;
+  static const IconData forum = Icons.forum_outlined;
+  static const IconData muted = Icons.notifications_off_outlined;
+  static const IconData readOnly = Icons.lock_clock_outlined;
   static const IconData help = Icons.help_outline_rounded;
 
   // ── Sesión y cuenta ────────────────────────────────────

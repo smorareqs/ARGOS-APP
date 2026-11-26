@@ -24,6 +24,8 @@ class ActiveTenant {
     this.timezone = 'America/Guatemala',
     this.currency = 'GTQ',
     this.features = const {},
+    this.readOnly = false,
+    this.billingStatus = 'active',
   });
 
   final String id;
@@ -36,6 +38,14 @@ class ActiveTenant {
   final Map<String, bool> features;
 
   bool hasFeature(String key) => features[key] ?? false;
+
+  /// Pago vencido de más días: la empresa solo puede leer (402 al escribir).
+  final bool readOnly;
+
+  /// `trialing`, `active`, `past_due`, `suspended` o `cancelled`.
+  final String billingStatus;
+
+  bool get pastDue => billingStatus == 'past_due';
 }
 
 /// Membresía del usuario en una empresa, con su rol.

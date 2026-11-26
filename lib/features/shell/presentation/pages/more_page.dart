@@ -1,5 +1,6 @@
 import 'package:argos_app/features/auth/presentation/providers/auth_state.dart';
 import 'package:argos_app/features/auth/presentation/providers/session_controller.dart';
+import 'package:argos_app/features/chat/presentation/widgets/chat_entry_tile.dart';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -39,6 +40,7 @@ class MorePage extends ConsumerWidget {
             padding: EdgeInsets.zero,
             child: Column(
               children: [
+                const ChatEntryTile(),
                 if (session.permissions.contains('inventory.read'))
                   AppListTile(
                     icon: CustomIcons.equipment,

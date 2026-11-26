@@ -5,6 +5,7 @@ import 'package:argos_app/features/auth/models/session.dart';
 import 'package:argos_app/features/auth/presentation/providers/account_providers.dart';
 import 'package:argos_app/features/auth/presentation/providers/auth_state.dart';
 import 'package:argos_app/features/auth/presentation/providers/session_controller.dart';
+import 'package:argos_app/features/chat/presentation/widgets/chat_entry_tile.dart';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -53,6 +54,7 @@ class ProfilePage extends ConsumerWidget {
             padding: EdgeInsets.zero,
             child: Column(
               children: [
+                if (!showBack) const ChatEntryTile(),
                 if (session.can('hr.attendance.own'))
                   AppListTile(
                     icon: CustomIcons.time,

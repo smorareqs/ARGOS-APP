@@ -392,7 +392,7 @@ class _MockHospitality {
       'guest_id': primary.id, 'name': primary.name, 'email': primary.email,
       'tenant_name': garrent ? 'Garrent' : 'Costa Limpia S.A.', 'reservation_id': s.id, 'reservation_code': s.code,
       'expires_at': s.checkOut.add(const Duration(days: 1)).toUtc().toIso8601String(),
-      'features': {'parking': !garrent, 'shared_areas': !garrent, 'guest_chat': !garrent},
+      'features': {'parking': !garrent, 'shared_areas': !garrent, 'guest_chat': !garrent, 'smart_locks': !garrent},
     };
   }
 

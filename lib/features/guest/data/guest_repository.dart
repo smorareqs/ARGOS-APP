@@ -1,6 +1,7 @@
 import 'package:argos_app/core/config/app_config.dart';
 import 'package:argos_app/core/network/api_exception.dart';
 import 'package:argos_app/core/network/mock/mock_routes.dart';
+import 'package:argos_app/features/chat/models/chat.dart';
 import 'package:argos_app/features/guest/models/guest.dart';
 import 'package:argos_app/features/hospitality/models/hospitality.dart';
 import 'package:dio/dio.dart';
@@ -129,6 +130,18 @@ class GuestRepository {
     );
     return (m['number'] as num?)?.toInt() ?? 0;
   }
+
+  // ── Chat con la empresa (F8) y código de la puerta (F1) ─────────
+
+  Future<GuestChat> chat() async => GuestChat.fromJson(_map(await _call(() => _dio.get<dynamic>('/guest/chat'))));
+
+  Future<ChatMessage> sendChat(String body) async => ChatMessage.fromJson(
+    _map(await _call(() => _dio.post<dynamic>('/guest/chat/messages', data: {'body': body.trim()}))),
+  );
+
+  Future<void> readChat() => _call(() => _dio.post<dynamic>('/guest/chat/read'));
+
+  Future<GuestLock> lock() async => GuestLock.fromJson(_map(await _call(() => _dio.get<dynamic>('/guest/lock'))));
 
   Future<void> registerDevice(String fcmToken) =>
       _call(() => _dio.post<dynamic>('/guest/device', data: {'token': fcmToken}));

@@ -334,6 +334,9 @@ class _MockAuthApi {
         'timezone': 'America/Guatemala',
         'currency': 'GTQ',
         'features': tenant.features,
+        // Garrent tiene el pago vencido para ver el aviso de quien paga.
+        'billing_status': tenant.id == _garrent.id ? 'past_due' : 'active',
+        'read_only': false,
       },
       'role': {'key': roleKey, 'name': _roleNames[roleKey]},
       'permissions': _rolePermissions[roleKey],

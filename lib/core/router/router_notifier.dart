@@ -98,6 +98,8 @@ class RouterNotifier extends ChangeNotifier {
             path == '/metrics' ||
             path == '/metrics/team' ||
             path == '/reports' ||
+            path == '/chat' ||
+            path.startsWith('/chat/') ||
             tabsForSession(session).any((t) => path == '/home/${t.id}'),
     };
   }

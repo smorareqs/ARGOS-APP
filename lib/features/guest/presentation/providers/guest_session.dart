@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:argos_app/core/push/push_providers.dart';
 import 'package:argos_app/core/storage/secure_storage_service.dart';
 import 'package:argos_app/core/utils/toast.dart';
+import 'package:argos_app/features/chat/models/chat.dart';
 import 'package:argos_app/features/guest/data/guest_repository.dart';
 import 'package:argos_app/features/guest/models/guest.dart';
 import 'package:argos_app/features/hospitality/models/hospitality.dart';
@@ -122,3 +123,13 @@ final guestParkingProvider = FutureProvider.autoDispose<List<ParkingSpot>>(
 final guestSlotsProvider = FutureProvider.autoDispose.family<List<AreaSlot>, (String, String)>(
   (ref, key) => ref.watch(guestRepositoryProvider).availability(key.$1, parseDay(key.$2)),
 );
+
+/// F8: datos de la conversación con la empresa (título y si está archivada).
+final guestChatInfoProvider = FutureProvider.autoDispose<GuestChat>((ref) => ref.watch(guestRepositoryProvider).chat());
+
+/// F1: el código de la puerta (se vuelve a pedir cada 10 min mientras se ve).
+final guestLockProvider = FutureProvider.autoDispose<GuestLock>((ref) {
+  final timer = Timer(const Duration(minutes: 10), ref.invalidateSelf);
+  ref.onDispose(timer.cancel);
+  return ref.watch(guestRepositoryProvider).lock();
+});

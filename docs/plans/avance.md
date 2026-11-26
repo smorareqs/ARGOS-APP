@@ -769,3 +769,18 @@ Maps SDK restringida a la app (la del navegador está restringida por dominio).
 * [B] Pruebas en verde: integración del backend (`TestAttendanceFlow`, `TestMetricsGoalsAndIncentives`,
   nómina con asistencia) y 98 de la app. Pendiente para Chris: marcar entrada con el GPS y la cámara del
   teléfono y abrir el PDF de una boleta real.
+* [B] **Fase 6 en el backend: chat, cerraduras y retención.** Migración `0010_chat_locks` (conversaciones,
+  participantes, mensajes, cerraduras y códigos cifrados). Chat del equipo (1:1 y grupos, silenciar,
+  fotos `chat/image`) y con el huésped: la conversación se crea al confirmar la reserva si la empresa tiene
+  `guest_chat` y se archiva 24 h después de la salida (`chat_archive`). Cerraduras con un proveedor simulado
+  (Nexxt queda pendiente de su API): el código se programa al confirmar (de la llegada a la salida + 2 h),
+  se rehace si cambian las fechas y se revoca al cancelar o salir; el huésped lo ve 24 h antes. Retención
+  (evidencias 24 meses, avisos leídos 180 días, trabajos 30/90 días) y `worker_stats` cada 5 min en el log.
+* [B] **Fase 6 en la app.** B22 chat (Equipo/Huéspedes, no leídos, búsqueda, "Nueva" para 1:1 o grupo),
+  B23 conversación (burbujas por día, se envía al instante y se puede reintentar, foto con la cámara,
+  cargar anteriores, silenciar, archivada en solo lectura; tiempo real más un sondeo cada 20 s), F8 chat
+  del huésped (solo texto, sondeo cada 10 s), F1 código de la puerta en "Mi reserva" y aviso de solo
+  lectura o de pago vencido arriba de las pestañas. Entradas al chat en Más y Perfil con los no leídos.
+* [B] Pruebas en verde: integración del backend (`TestChatInternalAndGuest`, `TestLocksAndRetention`) y
+  109 de la app. Pendiente para Chris: chat entre dos teléfonos, push de un mensaje, foto en el chat y el
+  código de la puerta con la reserva de prueba.

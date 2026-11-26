@@ -10,6 +10,8 @@ import 'package:argos_app/features/auth/presentation/pages/splash_page.dart';
 import 'package:argos_app/features/auth/presentation/pages/tenant_select_page.dart';
 import 'package:argos_app/features/auth/presentation/pages/totp_page.dart';
 import 'package:argos_app/features/auth/presentation/pages/unlock_page.dart';
+import 'package:argos_app/features/chat/presentation/pages/chat_list_page.dart';
+import 'package:argos_app/features/chat/presentation/pages/chat_thread_page.dart';
 import 'package:argos_app/features/dev/presentation/pages/component_catalog_page.dart';
 import 'package:argos_app/features/guest/presentation/pages/guest_areas_page.dart';
 import 'package:argos_app/features/guest/presentation/pages/guest_home_page.dart';
@@ -194,6 +196,13 @@ GoRouter appRouter(Ref ref) {
       GoRoute(path: '/guest/parking', builder: (context, state) => const GuestParkingPage()),
       GoRoute(path: '/guest/report', builder: (context, state) => const GuestReportPage()),
       GoRoute(path: '/guest/help', builder: (context, state) => const GuestHelpPage()),
+      GoRoute(path: '/guest/chat', builder: (context, state) => const GuestChatPage()),
+      // Fase 6: chat del equipo y con huéspedes.
+      GoRoute(
+        path: '/chat',
+        builder: (context, state) => ChatListPage(initialKind: state.uri.queryParameters['kind'] ?? 'internal'),
+      ),
+      GoRoute(path: '/chat/:id', builder: (context, state) => ChatThreadPage(id: state.pathParameters['id']!)),
       // Fase 5: asistencia, boletas, disciplina, métricas y reportes.
       GoRoute(path: '/attendance', builder: (context, state) => const AttendancePage()),
       GoRoute(

@@ -12,6 +12,7 @@ import 'package:argos_app/features/shell/presentation/pages/more_page.dart';
 import 'package:argos_app/features/shell/presentation/widgets/coming_soon_tab.dart';
 import 'package:argos_app/features/tasks/presentation/pages/team_page.dart';
 import 'package:argos_app/features/tickets/presentation/pages/tickets_page.dart';
+import 'package:argos_app/features/auth/models/session.dart';
 import 'package:design_system/design_system.dart';
 import 'package:argos_app/features/reservations/presentation/pages/reservations_page.dart';
 import 'package:argos_app/features/security/presentation/pages/security_pages.dart';
@@ -53,7 +54,7 @@ class HomeShellPage extends ConsumerWidget {
                   ? 'mostrando datos guardados'
                   : 'mostrando datos guardados ${DateLabels.relative(state.cachedAt!)}',
             )
-          : null,
+          : _billingBanner(state.session),
       bodies: [
         for (final tab in tabs)
           switch (tab) {
@@ -99,3 +100,19 @@ IconData shellTabIcon(ShellTab tab) => switch (tab) {
   ShellTab.more => CustomIcons.more,
   ShellTab.profile => CustomIcons.person,
 };
+
+/// Pago vencido: solo lectura para todos; aviso suave para quien paga.
+Widget? _billingBanner(Session session) {
+  if (session.tenant.readOnly) {
+    return const ReadOnlyBar(
+      message: 'Solo lectura: la cuenta de la empresa tiene un pago pendiente. Puedes ver todo, pero no guardar cambios.',
+    );
+  }
+  if (session.tenant.pastDue && session.can('tenant.billing')) {
+    return const ReadOnlyBar(
+      soft: true,
+      message: 'El pago de la suscripción está vencido. Ponte al día desde la web para no pasar a solo lectura.',
+    );
+  }
+  return null;
+}

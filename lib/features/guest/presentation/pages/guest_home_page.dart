@@ -193,6 +193,7 @@ class _StayView extends StatelessWidget {
             ],
           ),
         ),
+        if ((me?.smartLocks ?? false) && !done) _LockCard(now: now),
         if (stay.instructions.isNotEmpty && !done) ...[
           const SizedBox(height: 22),
           const SectionHeader(title: 'Instrucciones de acceso'),
@@ -232,6 +233,13 @@ class _StayView extends StatelessWidget {
             mainAxisExtent: 184,
           ),
           children: [
+            if (me?.chat ?? false)
+              GuestActionTile(
+                icon: CustomIcons.forum,
+                title: 'Escribir a la empresa',
+                subtitle: done ? 'Ver la conversación' : 'Te responde el equipo',
+                onTap: () => context.push('/guest/chat'),
+              ),
             if (me?.sharedAreas ?? false)
               GuestActionTile(
                 icon: CustomIcons.sharedAreas,
@@ -317,6 +325,77 @@ class _BigDate extends StatelessWidget {
           style: CustomTypography.verdana(fontSize: 12, color: Colors.white.withValues(alpha: 0.75)),
         ),
       ],
+    );
+  }
+}
+
+/// F1: el código de la puerta inteligente. Aparece 24 h antes de la llegada;
+/// antes muestra cuándo estará.
+class _LockCard extends ConsumerWidget {
+  const _LockCard({required this.now});
+
+  final DateTime now;
+
+  String _when(DateTime d) =>
+      '${shortDay(DateTime(d.year, d.month, d.day))} a las ${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lock = ref.watch(guestLockProvider).valueOrNull;
+    if (lock == null || !lock.hasLock) return const SizedBox.shrink();
+    final code = lock.available ? lock.code : null;
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: AppCard(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(CustomIcons.key, color: CustomColors.primary),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    lock.deviceName?.isNotEmpty == true ? 'Código · ${lock.deviceName}' : 'Código de la puerta',
+                    style: CustomTypography.cardTitle,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            if (code != null) ...[
+              Semantics(
+                label: 'Código ${code.split('').join(' ')}',
+                excludeSemantics: true,
+                child: Text(
+                  code.split('').join(' '),
+                  style: CustomTypography.mono.copyWith(
+                    fontSize: 34,
+                    letterSpacing: 2,
+                    color: CustomColors.textPrimary,
+                  ),
+                ),
+              ),
+              if (lock.validFrom != null && lock.validTo != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  'Sirve desde el ${_when(lock.validFrom!)} hasta el ${_when(lock.validTo!)}.',
+                  style: CustomTypography.bodySmall,
+                ),
+              ],
+            ] else
+              Text(
+                lock.message.isNotEmpty
+                    ? lock.message
+                    : lock.showsAt != null
+                    ? 'Tu código aparecerá aquí el ${_when(lock.showsAt!)}.'
+                    : 'Tu código aparecerá aquí 24 horas antes de tu llegada.',
+                style: CustomTypography.body.copyWith(fontSize: 14.5),
+              ),
+          ],
+        ),
+      ),
     );
   }
 }

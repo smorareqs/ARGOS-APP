@@ -17,6 +17,7 @@ const _available = [
   '/guest',
   '/attendance',
   '/payslips',
+  '/chat',
   '/disciplinary',
   '/metrics',
   '/reports',

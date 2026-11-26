@@ -47,6 +47,8 @@ class GuestMe {
   String get firstName => name.trim().split(' ').first;
   bool get parking => features['parking'] ?? false;
   bool get sharedAreas => features['shared_areas'] ?? false;
+  bool get chat => features['guest_chat'] ?? false;
+  bool get smartLocks => features['smart_locks'] ?? false;
 }
 
 /// Sesión guardada del huésped: el token y quién es.

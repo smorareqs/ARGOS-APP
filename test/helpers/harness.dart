@@ -5,6 +5,7 @@ import 'package:argos_app/core/database/app_database.dart';
 import 'package:argos_app/core/network/connectivity_service.dart';
 import 'package:argos_app/core/network/mock/mock_backend.dart';
 import 'package:argos_app/core/network/mock/mock_routes.dart';
+import 'package:argos_app/features/chat/data/mock/chat_mock_routes.dart';
 import 'package:argos_app/features/auth/data/datasources/biometric_datasource.dart';
 import 'package:argos_app/features/auth/data/mock/auth_mock_routes.dart';
 import 'package:argos_app/features/auth/presentation/providers/auth_state.dart';
@@ -84,6 +85,7 @@ class Harness {
     registerTicketsMockRoutes(backend, clock: clock.now);
     registerHospitalityMockRoutes(backend, clock: clock.now);
     registerHrMockRoutes(backend, clock: clock.now);
+    registerChatMockRoutes(backend, clock: clock.now, liveDemo: false);
   }
 
   final TestClock clock;
