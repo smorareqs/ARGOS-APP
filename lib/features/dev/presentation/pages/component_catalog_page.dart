@@ -44,6 +44,7 @@ class _ComponentCatalogPageState extends ConsumerState<ComponentCatalogPage> {
   var _filter = <String>{'hoy'};
   var _search = '';
   var _amount = 2;
+  var _urgency = Urgency.high;
   final _checks = <int, bool>{0: true, 1: false, 2: false};
   var _returned = 3;
   var _consumed = 1;
@@ -239,7 +240,34 @@ class _ComponentCatalogPageState extends ConsumerState<ComponentCatalogPage> {
           ),
         ],
         const SizedBox(height: 32),
-        const SectionHeader(number: '05', title: 'Historial'),
+        const SectionHeader(number: '05', title: 'Avisos e incidencias'),
+        const SizedBox(height: 16),
+        AppCard(
+          padding: EdgeInsets.zero,
+          child: Column(
+            children: const [
+              NotificationTile(
+                icon: CustomIcons.today,
+                title: 'Nueva tarea: limpieza de salida',
+                body: 'OLI-3B · hoy 09:30–12:00',
+                time: '5 min',
+                unread: true,
+              ),
+              Divider(height: 1, color: CustomColors.divider),
+              NotificationTile(
+                icon: CustomIcons.incident,
+                tone: NotificationTone.danger,
+                title: 'Te asignaron la incidencia #42',
+                body: 'Aire acondicionado no enfría · crítica',
+                time: '09:12',
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        UrgencySelector(value: _urgency, onChanged: (u) => setState(() => _urgency = u)),
+        const SizedBox(height: 32),
+        const SectionHeader(number: '06', title: 'Historial'),
         const SizedBox(height: 16),
         const TimelineItem(
           title: 'Tarea asignada',
@@ -268,7 +296,7 @@ class _ComponentCatalogPageState extends ConsumerState<ComponentCatalogPage> {
           isLast: true,
         ),
         const SizedBox(height: 32),
-        const SectionHeader(number: '06', title: 'Pantalla de detalle'),
+        const SectionHeader(number: '07', title: 'Pantalla de detalle'),
         const SizedBox(height: 16),
         SecondaryButton(
           label: 'Ver detalle de ejemplo',

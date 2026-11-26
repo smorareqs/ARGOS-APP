@@ -752,3 +752,22 @@ Map<String, dynamic>? _claims(String? token) {
     return null;
   }
 }
+
+/// Propiedades del modo simulado (id, código, nombre) para otras features.
+List<(String, String, String)> get mockPropertyOptions => [
+  for (final p in _properties) ('prop-${p.$1.toLowerCase()}', p.$1, p.$2),
+];
+
+/// Quién hace la petición en el modo simulado: (id, nombre, rol), o null si
+/// el token no sirve.
+(String, String, String)? mockWho(MockRequest req, DateTime now) {
+  final claims = _claims(req.bearerToken);
+  final exp = claims?['exp'];
+  if (claims == null || exp is! int || exp < now.millisecondsSinceEpoch ~/ 1000) return null;
+  final email = '${claims['sub']}';
+  const extra = {
+    'seguridad@argos.demo': ('u-jorge', 'Jorge Castillo', 'security'),
+    'propietario@argos.demo': ('u-elena', 'Elena Ruiz', 'owner'),
+  };
+  return _people[email] ?? extra[email] ?? ('u-${email.split('@').first}', email, 'cleaner');
+}

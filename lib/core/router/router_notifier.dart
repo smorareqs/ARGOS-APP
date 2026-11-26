@@ -58,6 +58,11 @@ class RouterNotifier extends ChangeNotifier {
             path == '/profile' ||
             path.startsWith('/profile/') ||
             path.startsWith('/tasks/') ||
+            path == '/inventory' ||
+            path == '/notifications' ||
+            path == '/alerts' ||
+            path == '/tickets' ||
+            path.startsWith('/tickets/') ||
             tabsForSession(session).any((t) => path == '/home/${t.id}'),
     };
   }

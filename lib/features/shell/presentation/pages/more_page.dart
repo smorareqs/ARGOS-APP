@@ -46,6 +46,19 @@ class MorePage extends ConsumerWidget {
                     subtitle: 'Mi custodia, sacar artículos y reposición',
                     onTap: () => context.push('/inventory'),
                   ),
+                if (session.can('maintenance.read'))
+                  AppListTile(
+                    icon: CustomIcons.tickets,
+                    title: 'Incidencias',
+                    subtitle: 'Reportadas en tus propiedades',
+                    onTap: () => context.push('/tickets'),
+                  ),
+                AppListTile(
+                  icon: CustomIcons.notifications,
+                  title: 'Notificaciones',
+                  subtitle: 'Qué te llega al teléfono y al correo',
+                  onTap: () => context.push('/profile/notifications'),
+                ),
                 AppListTile(
                   icon: CustomIcons.sync,
                   title: 'Sincronización',

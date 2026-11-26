@@ -10,7 +10,7 @@ planes por fase están en esta carpeta.
 | --- | --- | --- | --- |
 | 1 | [fase01.md](fase01.md) | En curso | Backend y web hechos (2026-11-21); falta la app de B y dos pendientes de A |
 | 2 | [fase02.md](fase02.md) | Hecha | A (2026-11-21) y B (2026-11-26): tareas, inventario y la app de ejecución |
-| 3 | [fase03.md](fase03.md) | En curso | Parte de A hecha (2026-11-22); faltan notificaciones y la app de B |
+| 3 | [fase03.md](fase03.md) | Hecha | A (2026-11-22) y B (2026-11-26): avisos, push, tiempo real e incidencias en la app |
 | 4 | [fase04.md](fase04.md) | En curso | Parte de A hecha (2026-11-22); faltan acceso de huéspedes, seguridad, parqueos, áreas comunes y la app de B |
 | 5 | [fase05.md](fase05.md) | En curso | Parte de A hecha (2026-11-23): nómina y disciplina; faltan asistencia, métricas, incentivos y la app de B |
 | 6 | [fase06.md](fase06.md) | En curso | Parte de A hecha (2026-11-23): facturación, claves API, reservas del sitio, aislamiento, límites, OpenAPI; faltan chat, cerraduras, retención y la app de B |
@@ -699,4 +699,29 @@ Maps SDK restringida a la app (la del navegador está restringida por dominio).
   validar o devolver con motivo, C11 con Inventario y Sincronización, y Sincronización con lo
   pendiente (reintentar o descartar). La pestaña Semana usa la misma vista de Hoy con su tira de días.
 * [B] Pruebas en verde (70 de la app). Pendiente para Chris: probar GPS y cámara en el teléfono.
-
+* [B] **Fase 3 en el backend: avisos.** Migración `0005_notifications` (avisos y preferencias). Los eventos
+  de tareas, inventario, incidencias, preventivos, alertas, reservas del sitio, nómina y disciplina se
+  vuelven avisos en la misma transacción del cambio (bandeja + push + correo `notification`, según
+  preferencias; `task_assigned` y `checkout_alarm` no se apagan). API: `GET /notifications`
+  (`unread`, `cursor`), `POST /notifications/{id}/read`, `POST /notifications/read-all`,
+  `GET/PUT /notifications/preferences`, `POST /devices` y `DELETE /devices/{token}`. Trabajos
+  `send_push` (FCM HTTP v1 con `ARGOS_FCM_CREDENTIALS`; sin ella solo log; borra tokens caducados) y
+  `task_reminders` (cada 5 min, 30 min antes, una vez por tarea).
+* [B] **Tiempo real para la web y la app** (lo reutiliza el chat): `GET /api/v1/ws?token=<access>`
+  (WebSocket). Mensajes `{type, data}`: `hello`, `notification` (el `NotificationRead` nuevo) y
+  `notification.read` (`{id}` o `{all: true}`). Viaja por `NOTIFY argos_realtime`, así funciona con
+  varias réplicas. **Para A:** la campana de la web puede escuchar este socket en lugar de recargar.
+  `realtime.Publish(ctx, q, tenantID, users, type, data)` sirve para cualquier módulo.
+* [B] **Fase 3 en la app.** B16/C4 avisos (Nuevas/Todas, por día, deslizar para leer, "Marcar todas",
+  insignia en la pestaña; supervisión ve arriba el panel de alertas con "Reconocer"), aviso en pantalla
+  cuando llega uno con la app abierta, preferencias por tipo (push y correo). Push con
+  `firebase_messaging`: se registra el teléfono al entrar y se quita al cerrar sesión; tocar el push
+  abre `data.app_route` (también desde la app cerrada o bloqueada). B12 reportar incidencia (propiedad,
+  equipo, urgencia, fotos que suben mientras se escribe), B13 mis tickets, B14 detalle con iniciar y
+  resolver (qué se hizo, costo, fotos, equipo funcionando). "¿Encontraste algún daño?" en B6.
+* [B] Decisión: la configuración de Firebase de la app va por `--dart-define` (`ARGOS_FIREBASE_API_KEY`,
+  `ARGOS_FIREBASE_APP_ID`, `ARGOS_FIREBASE_SENDER_ID`, `ARGOS_FIREBASE_PROJECT_ID`), sin
+  `google-services.json` en el repo; sin ella la app funciona sin push. `minSdk` 24.
+* [B] Pruebas en verde: integración del backend (bandeja, socket, push con token caducado,
+  preferencias, recordatorios) y 75 de la app. Pendiente para Chris: probar el push en un teléfono real
+  con el proyecto de Firebase.

@@ -16,6 +16,11 @@ import 'package:argos_app/features/shell/presentation/pages/home_shell_page.dart
 import 'package:argos_app/features/sync/presentation/pages/sync_page.dart';
 import 'package:argos_app/features/tasks/models/task_summary.dart';
 import 'package:argos_app/features/inventory/presentation/pages/inventory_page.dart';
+import 'package:argos_app/features/notifications/presentation/pages/notification_preferences_page.dart';
+import 'package:argos_app/features/notifications/presentation/pages/notifications_page.dart';
+import 'package:argos_app/features/tickets/presentation/pages/report_ticket_page.dart';
+import 'package:argos_app/features/tickets/presentation/pages/ticket_detail_page.dart';
+import 'package:argos_app/features/tickets/presentation/pages/tickets_page.dart';
 import 'package:argos_app/features/tasks/presentation/pages/task_close_page.dart';
 import 'package:argos_app/features/tasks/presentation/pages/task_detail_page.dart';
 import 'package:argos_app/features/tasks/presentation/pages/task_execution_page.dart';
@@ -114,6 +119,33 @@ GoRouter appRouter(Ref ref) {
       ),
       GoRoute(path: '/inventory', builder: (context, state) => const InventoryPage(showBack: true)),
       GoRoute(path: '/sync', builder: (context, state) => const SyncPage()),
+      // Fase 3: avisos e incidencias.
+      GoRoute(
+        path: '/notifications',
+        builder: (context, state) => const NotificationsPage(showBack: true),
+      ),
+      GoRoute(
+        path: '/profile/notifications',
+        builder: (context, state) => const NotificationPreferencesPage(),
+      ),
+      GoRoute(
+        path: '/tickets',
+        builder: (context, state) => TicketsPage(
+          mine: state.uri.queryParameters['mine'] == 'true',
+          showBack: true,
+        ),
+      ),
+      GoRoute(
+        path: '/tickets/new',
+        builder: (context, state) => ReportTicketPage(
+          propertyId: state.uri.queryParameters['property_id'],
+          propertyLabel: state.uri.queryParameters['property'],
+        ),
+      ),
+      GoRoute(
+        path: '/tickets/:id',
+        builder: (context, state) => TicketDetailPage(ticketId: state.pathParameters['id']!),
+      ),
     ],
     errorBuilder: (context, state) => Scaffold(
       body: Center(child: Text('Ruta no encontrada: ${state.uri}')),

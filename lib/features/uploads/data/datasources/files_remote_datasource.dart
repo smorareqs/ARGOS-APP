@@ -10,6 +10,9 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'files_remote_datasource.g.dart';
 
+/// Prefijo de entidad para fotos de algo que aún no existe en el servidor.
+const draftEntityPrefix = 'draft:';
+
 /// Destino prefirmado para subir un archivo directo al almacenamiento.
 class PresignedUpload {
   const PresignedUpload({
@@ -74,8 +77,12 @@ class FilesRemoteDataSource {
       data: {
         'module': module,
         'kind': kind,
-        'entity_type': entityType,
-        'entity_id': entityId,
+        // Un borrador (p. ej. el reporte de una incidencia que aún no existe)
+        // sube sin entidad: el servidor la enlaza al crear el registro.
+        if (!entityType.startsWith(draftEntityPrefix)) ...{
+          'entity_type': entityType,
+          'entity_id': entityId,
+        },
         'content_type': contentType,
         'size': size,
       },

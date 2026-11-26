@@ -6,7 +6,7 @@ part of 'session_controller.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$sessionControllerHash() => r'13904fb338c4bd9f69b48c7cdc953d576fbf2956';
+String _$sessionControllerHash() => r'412dacc25ca9a573267b885d37fb974909c991c3';
 
 /// Máquina de estados de la sesión (ux-ui.md F1). Las acciones que vienen de
 /// un formulario devuelven el [AppFailure] para mostrarlo junto al campo, o

@@ -51,12 +51,14 @@ export 'molecules/error_state.dart';
 export 'molecules/filter_chips.dart';
 export 'molecules/itinerary_header.dart';
 export 'molecules/labeled_field.dart';
+export 'molecules/notification_tile.dart';
 export 'molecules/photo_grid.dart';
 export 'molecules/quantity_row.dart';
 export 'molecules/search_field.dart';
 export 'molecules/section_header.dart';
 export 'molecules/task_card.dart';
 export 'molecules/timeline_item.dart';
+export 'molecules/urgency_selector.dart';
 export 'molecules/week_strip.dart';
 
 // ── Organisms ──────────────────────────────────────────

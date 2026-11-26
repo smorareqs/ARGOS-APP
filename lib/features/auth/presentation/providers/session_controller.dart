@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:argos_app/core/errors/app_failure.dart';
 import 'package:argos_app/core/network/connectivity_service.dart';
+import 'package:argos_app/core/realtime/sign_out_hooks.dart';
 import 'package:argos_app/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:argos_app/features/auth/data/repositories/quick_unlock_repository_impl.dart';
 import 'package:argos_app/features/auth/domain/repositories/auth_repository.dart';
@@ -205,6 +206,8 @@ class SessionController extends _$SessionController {
   }
 
   Future<void> logout() async {
+    // Con el token aún vigente: quitar el teléfono de los push, etc.
+    await ref.read(signOutHooksProvider).run();
     await _auth.logout();
     await _quickUnlock.reset();
     state = const AuthSignedOut();

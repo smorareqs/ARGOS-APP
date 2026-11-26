@@ -4,9 +4,12 @@ import 'package:flutter/material.dart';
 
 /// Un destino de la [AppBottomNav].
 class NavDestination {
-  const NavDestination({required this.icon, required this.label});
+  const NavDestination({required this.icon, required this.label, this.badge = 0});
   final IconData icon;
   final String label;
+
+  /// Contador sobre el icono (avisos sin leer). 0 = sin insignia.
+  final int badge;
 }
 
 /// Barra de navegación inferior ARGOS — superficie blanca elevada.
@@ -51,6 +54,7 @@ class AppBottomNav extends StatelessWidget {
                   icon: destinations[i].icon,
                   label: destinations[i].label,
                   active: i == currentIndex,
+                  badge: destinations[i].badge,
                   onTap: onSelect == null ? null : () => onSelect!(i),
                 ),
             ],

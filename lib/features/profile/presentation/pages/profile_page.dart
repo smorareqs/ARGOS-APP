@@ -66,6 +66,19 @@ class ProfilePage extends ConsumerWidget {
                 onTap: online ? () => context.push('/profile/sessions') : null,
               ),
               AppListTile(
+                icon: CustomIcons.notifications,
+                title: 'Notificaciones',
+                subtitle: online ? 'Qué te llega al teléfono y al correo' : needsConnection,
+                onTap: online ? () => context.push('/profile/notifications') : null,
+              ),
+              if (session.can('maintenance.report') && !session.can('maintenance.execute'))
+                AppListTile(
+                  icon: CustomIcons.tickets,
+                  title: 'Mis reportes',
+                  subtitle: 'Incidencias que reportaste',
+                  onTap: () => context.push('/tickets'),
+                ),
+              AppListTile(
                 icon: CustomIcons.fingerprint,
                 title: 'Inicio rápido',
                 subtitle: _quickUnlockLabel(quickUnlock),

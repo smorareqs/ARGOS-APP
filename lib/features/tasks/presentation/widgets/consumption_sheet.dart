@@ -117,6 +117,30 @@ class _ConsumptionSheetState extends ConsumerState<_ConsumptionSheet> {
               onPressed: total == 0 || _saving ? null : _save,
             ),
           ],
+          const SizedBox(height: 20),
+          const Divider(height: 1, color: CustomColors.divider),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              const Icon(CustomIcons.incident, size: 20, color: CustomColors.warning),
+              const SizedBox(width: 10),
+              Expanded(child: Text('¿Encontraste algún daño?', style: CustomTypography.cardTitle)),
+              TertiaryButton(
+                label: 'Reportar incidencia',
+                isExpanded: false,
+                onPressed: () {
+                  final p = widget.task.summary.property;
+                  Navigator.of(context).pop();
+                  context.push(
+                    Uri(
+                      path: '/tickets/new',
+                      queryParameters: {'property_id': p.id, 'property': '${p.code} · ${p.name}'},
+                    ).toString(),
+                  );
+                },
+              ),
+            ],
+          ),
         ],
       ),
     );

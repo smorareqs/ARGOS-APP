@@ -2,12 +2,15 @@ import 'package:argos_app/core/utils/date_labels.dart';
 import 'package:argos_app/features/auth/presentation/providers/auth_state.dart';
 import 'package:argos_app/features/auth/presentation/providers/session_controller.dart';
 import 'package:argos_app/features/inventory/presentation/pages/inventory_page.dart';
+import 'package:argos_app/features/notifications/presentation/pages/notifications_page.dart';
+import 'package:argos_app/features/notifications/presentation/providers/inbox_controller.dart';
 import 'package:argos_app/features/itinerary/presentation/pages/itinerary_page.dart';
 import 'package:argos_app/features/profile/presentation/pages/profile_page.dart';
 import 'package:argos_app/features/shell/models/shell_tab.dart';
 import 'package:argos_app/features/shell/presentation/pages/more_page.dart';
 import 'package:argos_app/features/shell/presentation/widgets/coming_soon_tab.dart';
 import 'package:argos_app/features/tasks/presentation/pages/team_page.dart';
+import 'package:argos_app/features/tickets/presentation/pages/tickets_page.dart';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -26,12 +29,18 @@ class HomeShellPage extends ConsumerWidget {
     if (state is! AuthSignedIn) return const SizedBox.shrink();
 
     final tabs = tabsForSession(state.session);
+    final unread = ref.watch(unreadNotificationsProvider);
     final index = tabs.indexWhere((t) => t.id == tabId).clamp(0, tabs.length - 1);
     void open(ShellTab tab) => context.go('/home/${tab.id}');
 
     return TabScaffold(
       destinations: [
-        for (final tab in tabs) NavDestination(icon: shellTabIcon(tab), label: tab.label),
+        for (final tab in tabs)
+          NavDestination(
+            icon: shellTabIcon(tab),
+            label: tab.label,
+            badge: tab == ShellTab.alerts ? unread : 0,
+          ),
       ],
       currentIndex: index,
       onSelect: (i) => open(tabs[i]),
@@ -57,6 +66,8 @@ class HomeShellPage extends ConsumerWidget {
             ShellTab.team => const TeamPage(),
             ShellTab.profile => const ProfilePage(),
             ShellTab.more => const MorePage(),
+            ShellTab.alerts => const NotificationsPage(),
+            ShellTab.tickets => const TicketsPage(),
             _ => ComingSoonTab(tab: tab),
           },
       ],
