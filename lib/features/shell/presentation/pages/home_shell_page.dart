@@ -1,19 +1,20 @@
 import 'package:argos_app/core/utils/date_labels.dart';
 import 'package:argos_app/features/auth/presentation/providers/auth_state.dart';
 import 'package:argos_app/features/auth/presentation/providers/session_controller.dart';
+import 'package:argos_app/features/inventory/presentation/pages/inventory_page.dart';
 import 'package:argos_app/features/itinerary/presentation/pages/itinerary_page.dart';
 import 'package:argos_app/features/profile/presentation/pages/profile_page.dart';
 import 'package:argos_app/features/shell/models/shell_tab.dart';
 import 'package:argos_app/features/shell/presentation/pages/more_page.dart';
 import 'package:argos_app/features/shell/presentation/widgets/coming_soon_tab.dart';
+import 'package:argos_app/features/tasks/presentation/pages/team_page.dart';
 import 'package:design_system/design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-/// Shell por rol: barra inferior con los destinos de la sesión. En la fase 1
-/// solo "Hoy" (cabecera) y "Perfil" tienen contenido; el resto muestra
-/// "próximamente" para poder probar la navegación por rol (fase01.md §4.4).
+/// Shell por rol: barra inferior con los destinos de la sesión (ux-ui.md
+/// §4.1). Los destinos de fases que aún no llegan muestran "próximamente".
 class HomeShellPage extends ConsumerWidget {
   const HomeShellPage({super.key, required this.tabId});
 
@@ -49,6 +50,11 @@ class HomeShellPage extends ConsumerWidget {
                   ? () => open(ShellTab.profile)
                   : () => context.push('/profile'),
             ),
+            ShellTab.week => ItineraryPage(
+              onOpenProfile: () => open(ShellTab.profile),
+            ),
+            ShellTab.inventory => const InventoryPage(),
+            ShellTab.team => const TeamPage(),
             ShellTab.profile => const ProfilePage(),
             ShellTab.more => const MorePage(),
             _ => ComingSoonTab(tab: tab),

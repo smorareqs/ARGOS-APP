@@ -9,7 +9,7 @@ planes por fase están en esta carpeta.
 | Fase | Documento | Estado | Notas |
 | --- | --- | --- | --- |
 | 1 | [fase01.md](fase01.md) | En curso | Backend y web hechos (2026-11-21); falta la app de B y dos pendientes de A |
-| 2 | [fase02.md](fase02.md) | En curso | Parte de A hecha (2026-11-21); faltan tareas e inventario de B |
+| 2 | [fase02.md](fase02.md) | Hecha | A (2026-11-21) y B (2026-11-26): tareas, inventario y la app de ejecución |
 | 3 | [fase03.md](fase03.md) | En curso | Parte de A hecha (2026-11-22); faltan notificaciones y la app de B |
 | 4 | [fase04.md](fase04.md) | En curso | Parte de A hecha (2026-11-22); faltan acceso de huéspedes, seguridad, parqueos, áreas comunes y la app de B |
 | 5 | [fase05.md](fase05.md) | En curso | Parte de A hecha (2026-11-23): nómina y disciplina; faltan asistencia, métricas, incentivos y la app de B |
@@ -673,3 +673,30 @@ Maps SDK restringida a la app (la del navegador está restringida por dominio).
 * [A] **Mantenimiento visual (2026-11-24).** Activos e Incidencias (vista de tabla) como listas
   visuales con el objeto de cada categoría; nueve íconos con volumen de activos. El mapa del Inicio
   ya no gira al seleccionar una propiedad.
+
+### 2026-11-26
+
+* [B] **Fase 2 en el backend: tareas e inventario.** Migración `0003_tasks_inventory` (tareas, checklist,
+  eventos, bodegas, artículos, existencias, movimientos, custodia, diferencias, reposiciones y consumos).
+  `/tasks` (lista, detalle, crear, reprogramar, validar, devolver, cancelar, generar de reservas,
+  iniciar con GPS, checklist, insumos, cerrar con conciliación) e `/inventory` (resumen, mi inventario,
+  artículos, bodegas, movimientos, devolver custodia, diferencias, reposiciones). Trabajo
+  `mark_late_tasks` cada 5 min. Las limpiezas de salida se crean solas con cada reserva confirmada.
+  Semilla de dos semanas de itinerario. Contratos de la web respetados (`done`/`returned`).
+* [B] Decisiones: al cerrar, cada artículo en custodia se declara como *devuelto*, *consumido* o *me
+  quedo* (para la siguiente tarea); lo que falta sale de la custodia y abre una diferencia. Blancos y
+  llaves se devuelven, no se consumen. Cerrar exige checklist completo y las fotos pedidas (antes y
+  después donde aplica).
+* [B] **Fase 2 en la app.** Modelos con la forma real del backend (`TaskRead`, `TaskDetail`), cola de
+  cambios sin conexión (`pending_actions`, Drift v5) que se envía en orden al volver la red y espera
+  a que suban las fotos antes de cerrar. Lo hecho sin red se ve al instante y la tarjeta dice "Por
+  enviar" / "Lista para cerrar".
+* [B] Pantallas: B3 detalle (cómo llegar, acceso 30 s, reserva, notas, avance, insumos, diferencias,
+  línea de tiempo), B4 ejecución por secciones (cronómetro, avance, fotos con estado de subida, antes
+  y después con la foto "antes" de guía, notas por punto, mantener presionada la sección para
+  marcarla), B6 insumos, B7 cierre con requisitos y conciliación, B8 cerrada, B9–B11 inventario
+  (custodia, sacar artículos, pedir reposición), C1 equipo del día, C2 reasignar/reprogramar, C3
+  validar o devolver con motivo, C11 con Inventario y Sincronización, y Sincronización con lo
+  pendiente (reintentar o descartar). La pestaña Semana usa la misma vista de Hoy con su tira de días.
+* [B] Pruebas en verde (70 de la app). Pendiente para Chris: probar GPS y cámara en el teléfono.
+

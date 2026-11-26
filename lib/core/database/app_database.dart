@@ -1,4 +1,5 @@
 import 'package:argos_app/core/database/tables/api_cache_table.dart';
+import 'package:argos_app/core/database/tables/pending_actions_table.dart';
 import 'package:argos_app/core/database/tables/pending_uploads_table.dart';
 import 'package:argos_app/core/database/tables/session_cache_table.dart';
 import 'package:drift/drift.dart';
@@ -8,12 +9,12 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'app_database.g.dart';
 
-@DriftDatabase(tables: [SessionCache, PendingUploads, ApiCache])
+@DriftDatabase(tables: [SessionCache, PendingUploads, ApiCache, PendingActions])
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -27,6 +28,7 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 3) await m.createTable(pendingUploads);
       if (from < 4) await m.createTable(apiCache);
+      if (from < 5) await m.createTable(pendingActions);
     },
   );
 

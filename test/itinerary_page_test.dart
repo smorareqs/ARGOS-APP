@@ -1,4 +1,6 @@
 import 'package:argos_app/core/database/app_database.dart';
+import 'package:argos_app/core/outbox/outbox.dart';
+import 'package:argos_app/core/outbox/outbox_providers.dart';
 import 'package:argos_app/features/auth/models/session.dart';
 import 'package:argos_app/features/auth/presentation/providers/auth_state.dart';
 import 'package:argos_app/features/auth/presentation/providers/session_controller.dart';
@@ -34,7 +36,7 @@ class _FakeTasks extends TasksRemoteDataSource {
   bool online = true;
 
   @override
-  Future<List<Map<String, dynamic>>> forDate(DateTime date) async {
+  Future<List<Map<String, dynamic>>> forDate(DateTime date, {bool mine = true}) async {
     if (!online) {
       throw DioException.connectionError(
         requestOptions: RequestOptions(path: '/tasks'),
@@ -64,6 +66,7 @@ void main() {
           sessionControllerProvider.overrideWith(_SignedIn.new),
           tasksRemoteDataSourceProvider.overrideWithValue(tasks),
           appDatabaseProvider.overrideWithValue(db),
+          outboxProvider.overrideWith((ref) => Outbox(db: db, send: (_, _, _) async => {})),
         ],
         child: MaterialApp(
           home: Scaffold(

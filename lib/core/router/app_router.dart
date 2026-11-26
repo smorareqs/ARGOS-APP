@@ -15,7 +15,10 @@ import 'package:argos_app/features/profile/presentation/pages/profile_page.dart'
 import 'package:argos_app/features/shell/presentation/pages/home_shell_page.dart';
 import 'package:argos_app/features/sync/presentation/pages/sync_page.dart';
 import 'package:argos_app/features/tasks/models/task_summary.dart';
+import 'package:argos_app/features/inventory/presentation/pages/inventory_page.dart';
+import 'package:argos_app/features/tasks/presentation/pages/task_close_page.dart';
 import 'package:argos_app/features/tasks/presentation/pages/task_detail_page.dart';
+import 'package:argos_app/features/tasks/presentation/pages/task_execution_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -89,9 +92,27 @@ GoRouter appRouter(Ref ref) {
       ),
       GoRoute(
         path: '/tasks/:id',
-        builder: (context, state) =>
-            TaskDetailPage(task: state.extra is TaskSummary ? state.extra! as TaskSummary : null),
+        builder: (context, state) => TaskDetailPage(
+          taskId: state.pathParameters['id']!,
+          preview: state.extra is TaskSummary ? state.extra! as TaskSummary : null,
+        ),
       ),
+      GoRoute(
+        path: '/tasks/:id/run',
+        builder: (context, state) => TaskExecutionPage(taskId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/tasks/:id/close',
+        builder: (context, state) => TaskClosePage(taskId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/tasks/:id/done',
+        builder: (context, state) => TaskClosedPage(
+          taskId: state.pathParameters['id']!,
+          discrepancies: state.extra is int ? state.extra! as int : 0,
+        ),
+      ),
+      GoRoute(path: '/inventory', builder: (context, state) => const InventoryPage(showBack: true)),
       GoRoute(path: '/sync', builder: (context, state) => const SyncPage()),
     ],
     errorBuilder: (context, state) => Scaffold(

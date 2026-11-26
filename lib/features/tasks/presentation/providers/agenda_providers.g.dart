@@ -6,7 +6,7 @@ part of 'agenda_providers.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$dayAgendaHash() => r'797979eb0379886596ea33c25f7babdc02dd52ee';
+String _$dayAgendaHash() => r'93b313803cee323701ff75a5f665b23802aa8891';
 
 /// Copied from Dart SDK
 class _SystemHash {
@@ -29,31 +29,39 @@ class _SystemHash {
   }
 }
 
-/// Agenda de un día (sin hora). Se vuelve a pedir con `ref.refresh`.
+/// Agenda de un día (sin hora): la propia o, con [mine] en false, la de
+/// todo el equipo del supervisor. Se vuelve a pedir con `ref.refresh` y
+/// sola cuando cambia una tarea.
 ///
 /// Copied from [dayAgenda].
 @ProviderFor(dayAgenda)
 const dayAgendaProvider = DayAgendaFamily();
 
-/// Agenda de un día (sin hora). Se vuelve a pedir con `ref.refresh`.
+/// Agenda de un día (sin hora): la propia o, con [mine] en false, la de
+/// todo el equipo del supervisor. Se vuelve a pedir con `ref.refresh` y
+/// sola cuando cambia una tarea.
 ///
 /// Copied from [dayAgenda].
 class DayAgendaFamily extends Family<AsyncValue<DayAgenda>> {
-  /// Agenda de un día (sin hora). Se vuelve a pedir con `ref.refresh`.
+  /// Agenda de un día (sin hora): la propia o, con [mine] en false, la de
+  /// todo el equipo del supervisor. Se vuelve a pedir con `ref.refresh` y
+  /// sola cuando cambia una tarea.
   ///
   /// Copied from [dayAgenda].
   const DayAgendaFamily();
 
-  /// Agenda de un día (sin hora). Se vuelve a pedir con `ref.refresh`.
+  /// Agenda de un día (sin hora): la propia o, con [mine] en false, la de
+  /// todo el equipo del supervisor. Se vuelve a pedir con `ref.refresh` y
+  /// sola cuando cambia una tarea.
   ///
   /// Copied from [dayAgenda].
-  DayAgendaProvider call(DateTime date) {
-    return DayAgendaProvider(date);
+  DayAgendaProvider call(DateTime date, {bool mine = true}) {
+    return DayAgendaProvider(date, mine: mine);
   }
 
   @override
   DayAgendaProvider getProviderOverride(covariant DayAgendaProvider provider) {
-    return call(provider.date);
+    return call(provider.date, mine: provider.mine);
   }
 
   static const Iterable<ProviderOrFamily>? _dependencies = null;
@@ -71,16 +79,20 @@ class DayAgendaFamily extends Family<AsyncValue<DayAgenda>> {
   String? get name => r'dayAgendaProvider';
 }
 
-/// Agenda de un día (sin hora). Se vuelve a pedir con `ref.refresh`.
+/// Agenda de un día (sin hora): la propia o, con [mine] en false, la de
+/// todo el equipo del supervisor. Se vuelve a pedir con `ref.refresh` y
+/// sola cuando cambia una tarea.
 ///
 /// Copied from [dayAgenda].
 class DayAgendaProvider extends AutoDisposeFutureProvider<DayAgenda> {
-  /// Agenda de un día (sin hora). Se vuelve a pedir con `ref.refresh`.
+  /// Agenda de un día (sin hora): la propia o, con [mine] en false, la de
+  /// todo el equipo del supervisor. Se vuelve a pedir con `ref.refresh` y
+  /// sola cuando cambia una tarea.
   ///
   /// Copied from [dayAgenda].
-  DayAgendaProvider(DateTime date)
+  DayAgendaProvider(DateTime date, {bool mine = true})
     : this._internal(
-        (ref) => dayAgenda(ref as DayAgendaRef, date),
+        (ref) => dayAgenda(ref as DayAgendaRef, date, mine: mine),
         from: dayAgendaProvider,
         name: r'dayAgendaProvider',
         debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
@@ -89,6 +101,7 @@ class DayAgendaProvider extends AutoDisposeFutureProvider<DayAgenda> {
         dependencies: DayAgendaFamily._dependencies,
         allTransitiveDependencies: DayAgendaFamily._allTransitiveDependencies,
         date: date,
+        mine: mine,
       );
 
   DayAgendaProvider._internal(
@@ -99,9 +112,11 @@ class DayAgendaProvider extends AutoDisposeFutureProvider<DayAgenda> {
     required super.debugGetCreateSourceHash,
     required super.from,
     required this.date,
+    required this.mine,
   }) : super.internal();
 
   final DateTime date;
+  final bool mine;
 
   @override
   Override overrideWith(
@@ -117,6 +132,7 @@ class DayAgendaProvider extends AutoDisposeFutureProvider<DayAgenda> {
         allTransitiveDependencies: null,
         debugGetCreateSourceHash: null,
         date: date,
+        mine: mine,
       ),
     );
   }
@@ -128,13 +144,16 @@ class DayAgendaProvider extends AutoDisposeFutureProvider<DayAgenda> {
 
   @override
   bool operator ==(Object other) {
-    return other is DayAgendaProvider && other.date == date;
+    return other is DayAgendaProvider &&
+        other.date == date &&
+        other.mine == mine;
   }
 
   @override
   int get hashCode {
     var hash = _SystemHash.combine(0, runtimeType.hashCode);
     hash = _SystemHash.combine(hash, date.hashCode);
+    hash = _SystemHash.combine(hash, mine.hashCode);
 
     return _SystemHash.finish(hash);
   }
@@ -145,6 +164,9 @@ class DayAgendaProvider extends AutoDisposeFutureProvider<DayAgenda> {
 mixin DayAgendaRef on AutoDisposeFutureProviderRef<DayAgenda> {
   /// The parameter `date` of this provider.
   DateTime get date;
+
+  /// The parameter `mine` of this provider.
+  bool get mine;
 }
 
 class _DayAgendaProviderElement
@@ -154,6 +176,8 @@ class _DayAgendaProviderElement
 
   @override
   DateTime get date => (origin as DayAgendaProvider).date;
+  @override
+  bool get mine => (origin as DayAgendaProvider).mine;
 }
 
 // ignore_for_file: type=lint

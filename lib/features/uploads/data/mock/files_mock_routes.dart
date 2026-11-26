@@ -4,11 +4,24 @@ import 'package:uuid/uuid.dart';
 /// Host ficticio del almacenamiento simulado.
 const mockStorageHost = 'mock-storage.argos.local';
 
+/// Archivo ya confirmado en el almacenamiento simulado.
+class MockStoredFile {
+  const MockStoredFile(this.entityType, this.entityId, this.kind);
+
+  final String entityType;
+  final String entityId;
+  final String kind;
+}
+
+/// Archivos confirmados por id, para que las demás rutas simuladas (p. ej.
+/// las fotos del checklist) los vean como el backend real.
+final mockStoredFiles = <String, MockStoredFile>{};
+
 /// Rutas simuladas del servicio de archivos (fase01 §3.8): presign, subida
 /// directa al "almacenamiento" y confirm. La subida tarda un poco para que
 /// se vea el estado "subiendo" en las miniaturas.
 void registerFilesMockRoutes(MockBackend backend) {
-  final pending = <String>{};
+  final pending = <String, MockStoredFile>{};
   final ready = <String>{};
 
   backend
@@ -22,7 +35,11 @@ void registerFilesMockRoutes(MockBackend backend) {
         return MockResponse.problem(422, 'El archivo supera los 10 MB.');
       }
       final id = const Uuid().v4();
-      pending.add(id);
+      pending[id] = MockStoredFile(
+        '${body['entity_type'] ?? ''}',
+        '${body['entity_id'] ?? ''}',
+        '${body['kind'] ?? ''}',
+      );
       return MockResponse.json({
         'file_id': id,
         'upload_url': 'https://$mockStorageHost/upload/$id',
@@ -34,16 +51,18 @@ void registerFilesMockRoutes(MockBackend backend) {
     ..on('PUT', '/upload/{id}', (req) async {
       await Future<void>.delayed(const Duration(milliseconds: 900));
       final id = req.pathParams['id']!;
-      if (!pending.contains(id)) {
+      if (!pending.containsKey(id)) {
         return MockResponse.problem(403, 'URL prefirmada vencida.');
       }
       return const MockResponse(200);
     })
     ..on('POST', '/files/{id}/confirm', (req) {
       final id = req.pathParams['id']!;
-      if (!pending.remove(id) && !ready.contains(id)) {
+      final file = pending.remove(id);
+      if (file == null && !ready.contains(id)) {
         return MockResponse.problem(404, 'Archivo no encontrado.');
       }
+      if (file != null) mockStoredFiles[id] = file;
       ready.add(id);
       return MockResponse.json({'id': id, 'status': 'ready'});
     });

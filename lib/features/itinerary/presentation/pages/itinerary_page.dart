@@ -178,6 +178,7 @@ class _ItineraryPageState extends ConsumerState<ItineraryPage> {
         for (final task in visible) ...[
           AgendaTaskCard(
             task: task,
+            unsynced: agenda.valueOrNull?.unsynced.contains(task.id) ?? false,
             onTap: () => context.push('/tasks/${task.id}', extra: task),
           ),
           const SizedBox(height: 12),

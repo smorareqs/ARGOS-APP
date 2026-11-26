@@ -8,17 +8,17 @@ import 'package:flutter/material.dart';
   return switch (task.status) {
     TaskStatus.pending => ('Pendiente', StatusBadgeVariant.pending),
     TaskStatus.inProgress => ('En progreso', StatusBadgeVariant.inProgress),
-    TaskStatus.completed => ('Terminada', StatusBadgeVariant.operative),
+    TaskStatus.done => ('Terminada', StatusBadgeVariant.operative),
     TaskStatus.validated => ('Validada', StatusBadgeVariant.operative),
+    TaskStatus.returned => ('Devuelta', StatusBadgeVariant.incident),
     TaskStatus.cancelled => ('Cancelada', StatusBadgeVariant.pending),
   };
 }
 
 IconData taskTypeIcon(TaskType type) => switch (type) {
-  TaskType.cleaning => CustomIcons.cleaning,
+  TaskType.checkoutCleaning || TaskType.deepCleaning || TaskType.touchUp => CustomIcons.cleaning,
   TaskType.inspection => CustomIcons.inspection,
   TaskType.maintenance => CustomIcons.maintenance,
-  TaskType.checkoutReview => CustomIcons.reservations,
 };
 
 String hhmm(DateTime t) =>
@@ -26,10 +26,22 @@ String hhmm(DateTime t) =>
 
 /// [TaskCard] del design system con los datos de una tarea de la agenda.
 class AgendaTaskCard extends StatelessWidget {
-  const AgendaTaskCard({super.key, required this.task, this.onTap});
+  const AgendaTaskCard({
+    super.key,
+    required this.task,
+    this.onTap,
+    this.unsynced = false,
+    this.showAssignee = false,
+  });
 
   final TaskSummary task;
   final VoidCallback? onTap;
+
+  /// Tiene cambios guardados en el teléfono que aún no llegan al servidor.
+  final bool unsynced;
+
+  /// Muestra a quién está asignada (vista de equipo).
+  final bool showAssignee;
 
   @override
   Widget build(BuildContext context) {
@@ -49,11 +61,14 @@ class AgendaTaskCard extends StatelessWidget {
           meta: [
             if (window != null) TaskMeta(icon: CustomIcons.time, label: window),
             TaskMeta(icon: taskTypeIcon(task.type), label: task.type.label),
+            if (showAssignee)
+              TaskMeta(icon: CustomIcons.person, label: task.assigneeName ?? 'Sin asignar'),
+            if (unsynced) const TaskMeta(icon: CustomIcons.uploadQueued, label: 'Por enviar'),
           ],
-          checklistDone: task.status == TaskStatus.inProgress
+          checklistDone: task.status == TaskStatus.inProgress || task.status == TaskStatus.returned
               ? task.checklistDone
               : null,
-          checklistTotal: task.status == TaskStatus.inProgress
+          checklistTotal: task.status == TaskStatus.inProgress || task.status == TaskStatus.returned
               ? task.checklistTotal
               : null,
           incident: task.showsLate && task.windowStart != null
@@ -61,8 +76,10 @@ class AgendaTaskCard extends StatelessWidget {
                     ? 'Debió iniciar a las ${task.windowStart}'
                     : 'Debió terminar a las ${task.windowEnd}')
               : null,
-          completedNote: finished && task.finishedAt != null
-              ? 'Terminada a las ${hhmm(task.finishedAt!)}'
+          completedNote: finished && unsynced
+              ? 'Lista para cerrar · se envía al reconectar'
+              : finished && task.finishedAt != null
+              ? '${task.status == TaskStatus.validated ? 'Validada' : 'Terminada'} a las ${hhmm(task.finishedAt!)}'
               : null,
           accented: task.status == TaskStatus.inProgress,
           completed: finished,

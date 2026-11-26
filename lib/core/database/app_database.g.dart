@@ -2053,12 +2053,664 @@ class ApiCacheCompanion extends UpdateCompanion<ApiCacheRow> {
   }
 }
 
+class $PendingActionsTable extends PendingActions
+    with TableInfo<$PendingActionsTable, PendingActionRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PendingActionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _methodMeta = const VerificationMeta('method');
+  @override
+  late final GeneratedColumn<String> method = GeneratedColumn<String>(
+    'method',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _pathMeta = const VerificationMeta('path');
+  @override
+  late final GeneratedColumn<String> path = GeneratedColumn<String>(
+    'path',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bodyMeta = const VerificationMeta('body');
+  @override
+  late final GeneratedColumn<String> body = GeneratedColumn<String>(
+    'body',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _entityKeyMeta = const VerificationMeta(
+    'entityKey',
+  );
+  @override
+  late final GeneratedColumn<String> entityKey = GeneratedColumn<String>(
+    'entity_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _labelMeta = const VerificationMeta('label');
+  @override
+  late final GeneratedColumn<String> label = GeneratedColumn<String>(
+    'label',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _waitUploadsMeta = const VerificationMeta(
+    'waitUploads',
+  );
+  @override
+  late final GeneratedColumn<bool> waitUploads = GeneratedColumn<bool>(
+    'wait_uploads',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("wait_uploads" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('queued'),
+  );
+  static const VerificationMeta _attemptsMeta = const VerificationMeta(
+    'attempts',
+  );
+  @override
+  late final GeneratedColumn<int> attempts = GeneratedColumn<int>(
+    'attempts',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _lastErrorMeta = const VerificationMeta(
+    'lastError',
+  );
+  @override
+  late final GeneratedColumn<String> lastError = GeneratedColumn<String>(
+    'last_error',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    method,
+    path,
+    body,
+    entityKey,
+    label,
+    waitUploads,
+    status,
+    attempts,
+    lastError,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'pending_actions';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PendingActionRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('method')) {
+      context.handle(
+        _methodMeta,
+        method.isAcceptableOrUnknown(data['method']!, _methodMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_methodMeta);
+    }
+    if (data.containsKey('path')) {
+      context.handle(
+        _pathMeta,
+        path.isAcceptableOrUnknown(data['path']!, _pathMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_pathMeta);
+    }
+    if (data.containsKey('body')) {
+      context.handle(
+        _bodyMeta,
+        body.isAcceptableOrUnknown(data['body']!, _bodyMeta),
+      );
+    }
+    if (data.containsKey('entity_key')) {
+      context.handle(
+        _entityKeyMeta,
+        entityKey.isAcceptableOrUnknown(data['entity_key']!, _entityKeyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_entityKeyMeta);
+    }
+    if (data.containsKey('label')) {
+      context.handle(
+        _labelMeta,
+        label.isAcceptableOrUnknown(data['label']!, _labelMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_labelMeta);
+    }
+    if (data.containsKey('wait_uploads')) {
+      context.handle(
+        _waitUploadsMeta,
+        waitUploads.isAcceptableOrUnknown(
+          data['wait_uploads']!,
+          _waitUploadsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    }
+    if (data.containsKey('attempts')) {
+      context.handle(
+        _attemptsMeta,
+        attempts.isAcceptableOrUnknown(data['attempts']!, _attemptsMeta),
+      );
+    }
+    if (data.containsKey('last_error')) {
+      context.handle(
+        _lastErrorMeta,
+        lastError.isAcceptableOrUnknown(data['last_error']!, _lastErrorMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  PendingActionRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PendingActionRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      method: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}method'],
+      )!,
+      path: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}path'],
+      )!,
+      body: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}body'],
+      ),
+      entityKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}entity_key'],
+      )!,
+      label: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}label'],
+      )!,
+      waitUploads: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}wait_uploads'],
+      )!,
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      attempts: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}attempts'],
+      )!,
+      lastError: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}last_error'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $PendingActionsTable createAlias(String alias) {
+    return $PendingActionsTable(attachedDatabase, alias);
+  }
+}
+
+class PendingActionRow extends DataClass
+    implements Insertable<PendingActionRow> {
+  final int id;
+
+  /// Método y ruta de la API, p. ej. `PATCH /tasks/…/checklist/…`.
+  final String method;
+  final String path;
+
+  /// Cuerpo JSON (null = sin cuerpo).
+  final String? body;
+
+  /// Entidad afectada (`task:<id>`) para mostrar "pendiente de enviar".
+  final String entityKey;
+
+  /// Texto corto para la pantalla de sincronización.
+  final String label;
+
+  /// Espera a que no queden fotos por subir (el cierre las necesita).
+  final bool waitUploads;
+
+  /// queued o error (el servidor lo rechazó; ver lastError).
+  final String status;
+  final int attempts;
+  final String? lastError;
+  final DateTime createdAt;
+  const PendingActionRow({
+    required this.id,
+    required this.method,
+    required this.path,
+    this.body,
+    required this.entityKey,
+    required this.label,
+    required this.waitUploads,
+    required this.status,
+    required this.attempts,
+    this.lastError,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['method'] = Variable<String>(method);
+    map['path'] = Variable<String>(path);
+    if (!nullToAbsent || body != null) {
+      map['body'] = Variable<String>(body);
+    }
+    map['entity_key'] = Variable<String>(entityKey);
+    map['label'] = Variable<String>(label);
+    map['wait_uploads'] = Variable<bool>(waitUploads);
+    map['status'] = Variable<String>(status);
+    map['attempts'] = Variable<int>(attempts);
+    if (!nullToAbsent || lastError != null) {
+      map['last_error'] = Variable<String>(lastError);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  PendingActionsCompanion toCompanion(bool nullToAbsent) {
+    return PendingActionsCompanion(
+      id: Value(id),
+      method: Value(method),
+      path: Value(path),
+      body: body == null && nullToAbsent ? const Value.absent() : Value(body),
+      entityKey: Value(entityKey),
+      label: Value(label),
+      waitUploads: Value(waitUploads),
+      status: Value(status),
+      attempts: Value(attempts),
+      lastError: lastError == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastError),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory PendingActionRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PendingActionRow(
+      id: serializer.fromJson<int>(json['id']),
+      method: serializer.fromJson<String>(json['method']),
+      path: serializer.fromJson<String>(json['path']),
+      body: serializer.fromJson<String?>(json['body']),
+      entityKey: serializer.fromJson<String>(json['entityKey']),
+      label: serializer.fromJson<String>(json['label']),
+      waitUploads: serializer.fromJson<bool>(json['waitUploads']),
+      status: serializer.fromJson<String>(json['status']),
+      attempts: serializer.fromJson<int>(json['attempts']),
+      lastError: serializer.fromJson<String?>(json['lastError']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'method': serializer.toJson<String>(method),
+      'path': serializer.toJson<String>(path),
+      'body': serializer.toJson<String?>(body),
+      'entityKey': serializer.toJson<String>(entityKey),
+      'label': serializer.toJson<String>(label),
+      'waitUploads': serializer.toJson<bool>(waitUploads),
+      'status': serializer.toJson<String>(status),
+      'attempts': serializer.toJson<int>(attempts),
+      'lastError': serializer.toJson<String?>(lastError),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  PendingActionRow copyWith({
+    int? id,
+    String? method,
+    String? path,
+    Value<String?> body = const Value.absent(),
+    String? entityKey,
+    String? label,
+    bool? waitUploads,
+    String? status,
+    int? attempts,
+    Value<String?> lastError = const Value.absent(),
+    DateTime? createdAt,
+  }) => PendingActionRow(
+    id: id ?? this.id,
+    method: method ?? this.method,
+    path: path ?? this.path,
+    body: body.present ? body.value : this.body,
+    entityKey: entityKey ?? this.entityKey,
+    label: label ?? this.label,
+    waitUploads: waitUploads ?? this.waitUploads,
+    status: status ?? this.status,
+    attempts: attempts ?? this.attempts,
+    lastError: lastError.present ? lastError.value : this.lastError,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  PendingActionRow copyWithCompanion(PendingActionsCompanion data) {
+    return PendingActionRow(
+      id: data.id.present ? data.id.value : this.id,
+      method: data.method.present ? data.method.value : this.method,
+      path: data.path.present ? data.path.value : this.path,
+      body: data.body.present ? data.body.value : this.body,
+      entityKey: data.entityKey.present ? data.entityKey.value : this.entityKey,
+      label: data.label.present ? data.label.value : this.label,
+      waitUploads: data.waitUploads.present
+          ? data.waitUploads.value
+          : this.waitUploads,
+      status: data.status.present ? data.status.value : this.status,
+      attempts: data.attempts.present ? data.attempts.value : this.attempts,
+      lastError: data.lastError.present ? data.lastError.value : this.lastError,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PendingActionRow(')
+          ..write('id: $id, ')
+          ..write('method: $method, ')
+          ..write('path: $path, ')
+          ..write('body: $body, ')
+          ..write('entityKey: $entityKey, ')
+          ..write('label: $label, ')
+          ..write('waitUploads: $waitUploads, ')
+          ..write('status: $status, ')
+          ..write('attempts: $attempts, ')
+          ..write('lastError: $lastError, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    method,
+    path,
+    body,
+    entityKey,
+    label,
+    waitUploads,
+    status,
+    attempts,
+    lastError,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PendingActionRow &&
+          other.id == this.id &&
+          other.method == this.method &&
+          other.path == this.path &&
+          other.body == this.body &&
+          other.entityKey == this.entityKey &&
+          other.label == this.label &&
+          other.waitUploads == this.waitUploads &&
+          other.status == this.status &&
+          other.attempts == this.attempts &&
+          other.lastError == this.lastError &&
+          other.createdAt == this.createdAt);
+}
+
+class PendingActionsCompanion extends UpdateCompanion<PendingActionRow> {
+  final Value<int> id;
+  final Value<String> method;
+  final Value<String> path;
+  final Value<String?> body;
+  final Value<String> entityKey;
+  final Value<String> label;
+  final Value<bool> waitUploads;
+  final Value<String> status;
+  final Value<int> attempts;
+  final Value<String?> lastError;
+  final Value<DateTime> createdAt;
+  const PendingActionsCompanion({
+    this.id = const Value.absent(),
+    this.method = const Value.absent(),
+    this.path = const Value.absent(),
+    this.body = const Value.absent(),
+    this.entityKey = const Value.absent(),
+    this.label = const Value.absent(),
+    this.waitUploads = const Value.absent(),
+    this.status = const Value.absent(),
+    this.attempts = const Value.absent(),
+    this.lastError = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  PendingActionsCompanion.insert({
+    this.id = const Value.absent(),
+    required String method,
+    required String path,
+    this.body = const Value.absent(),
+    required String entityKey,
+    required String label,
+    this.waitUploads = const Value.absent(),
+    this.status = const Value.absent(),
+    this.attempts = const Value.absent(),
+    this.lastError = const Value.absent(),
+    required DateTime createdAt,
+  }) : method = Value(method),
+       path = Value(path),
+       entityKey = Value(entityKey),
+       label = Value(label),
+       createdAt = Value(createdAt);
+  static Insertable<PendingActionRow> custom({
+    Expression<int>? id,
+    Expression<String>? method,
+    Expression<String>? path,
+    Expression<String>? body,
+    Expression<String>? entityKey,
+    Expression<String>? label,
+    Expression<bool>? waitUploads,
+    Expression<String>? status,
+    Expression<int>? attempts,
+    Expression<String>? lastError,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (method != null) 'method': method,
+      if (path != null) 'path': path,
+      if (body != null) 'body': body,
+      if (entityKey != null) 'entity_key': entityKey,
+      if (label != null) 'label': label,
+      if (waitUploads != null) 'wait_uploads': waitUploads,
+      if (status != null) 'status': status,
+      if (attempts != null) 'attempts': attempts,
+      if (lastError != null) 'last_error': lastError,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  PendingActionsCompanion copyWith({
+    Value<int>? id,
+    Value<String>? method,
+    Value<String>? path,
+    Value<String?>? body,
+    Value<String>? entityKey,
+    Value<String>? label,
+    Value<bool>? waitUploads,
+    Value<String>? status,
+    Value<int>? attempts,
+    Value<String?>? lastError,
+    Value<DateTime>? createdAt,
+  }) {
+    return PendingActionsCompanion(
+      id: id ?? this.id,
+      method: method ?? this.method,
+      path: path ?? this.path,
+      body: body ?? this.body,
+      entityKey: entityKey ?? this.entityKey,
+      label: label ?? this.label,
+      waitUploads: waitUploads ?? this.waitUploads,
+      status: status ?? this.status,
+      attempts: attempts ?? this.attempts,
+      lastError: lastError ?? this.lastError,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (method.present) {
+      map['method'] = Variable<String>(method.value);
+    }
+    if (path.present) {
+      map['path'] = Variable<String>(path.value);
+    }
+    if (body.present) {
+      map['body'] = Variable<String>(body.value);
+    }
+    if (entityKey.present) {
+      map['entity_key'] = Variable<String>(entityKey.value);
+    }
+    if (label.present) {
+      map['label'] = Variable<String>(label.value);
+    }
+    if (waitUploads.present) {
+      map['wait_uploads'] = Variable<bool>(waitUploads.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (attempts.present) {
+      map['attempts'] = Variable<int>(attempts.value);
+    }
+    if (lastError.present) {
+      map['last_error'] = Variable<String>(lastError.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PendingActionsCompanion(')
+          ..write('id: $id, ')
+          ..write('method: $method, ')
+          ..write('path: $path, ')
+          ..write('body: $body, ')
+          ..write('entityKey: $entityKey, ')
+          ..write('label: $label, ')
+          ..write('waitUploads: $waitUploads, ')
+          ..write('status: $status, ')
+          ..write('attempts: $attempts, ')
+          ..write('lastError: $lastError, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $SessionCacheTable sessionCache = $SessionCacheTable(this);
   late final $PendingUploadsTable pendingUploads = $PendingUploadsTable(this);
   late final $ApiCacheTable apiCache = $ApiCacheTable(this);
+  late final $PendingActionsTable pendingActions = $PendingActionsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2067,6 +2719,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     sessionCache,
     pendingUploads,
     apiCache,
+    pendingActions,
   ];
 }
 
@@ -3048,6 +3701,322 @@ typedef $$ApiCacheTableProcessedTableManager =
       ApiCacheRow,
       PrefetchHooks Function()
     >;
+typedef $$PendingActionsTableCreateCompanionBuilder =
+    PendingActionsCompanion Function({
+      Value<int> id,
+      required String method,
+      required String path,
+      Value<String?> body,
+      required String entityKey,
+      required String label,
+      Value<bool> waitUploads,
+      Value<String> status,
+      Value<int> attempts,
+      Value<String?> lastError,
+      required DateTime createdAt,
+    });
+typedef $$PendingActionsTableUpdateCompanionBuilder =
+    PendingActionsCompanion Function({
+      Value<int> id,
+      Value<String> method,
+      Value<String> path,
+      Value<String?> body,
+      Value<String> entityKey,
+      Value<String> label,
+      Value<bool> waitUploads,
+      Value<String> status,
+      Value<int> attempts,
+      Value<String?> lastError,
+      Value<DateTime> createdAt,
+    });
+
+class $$PendingActionsTableFilterComposer
+    extends Composer<_$AppDatabase, $PendingActionsTable> {
+  $$PendingActionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get method => $composableBuilder(
+    column: $table.method,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get path => $composableBuilder(
+    column: $table.path,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get body => $composableBuilder(
+    column: $table.body,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get entityKey => $composableBuilder(
+    column: $table.entityKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get label => $composableBuilder(
+    column: $table.label,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get waitUploads => $composableBuilder(
+    column: $table.waitUploads,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get attempts => $composableBuilder(
+    column: $table.attempts,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lastError => $composableBuilder(
+    column: $table.lastError,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$PendingActionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $PendingActionsTable> {
+  $$PendingActionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get method => $composableBuilder(
+    column: $table.method,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get path => $composableBuilder(
+    column: $table.path,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get body => $composableBuilder(
+    column: $table.body,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get entityKey => $composableBuilder(
+    column: $table.entityKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get label => $composableBuilder(
+    column: $table.label,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get waitUploads => $composableBuilder(
+    column: $table.waitUploads,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get attempts => $composableBuilder(
+    column: $table.attempts,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lastError => $composableBuilder(
+    column: $table.lastError,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$PendingActionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PendingActionsTable> {
+  $$PendingActionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get method =>
+      $composableBuilder(column: $table.method, builder: (column) => column);
+
+  GeneratedColumn<String> get path =>
+      $composableBuilder(column: $table.path, builder: (column) => column);
+
+  GeneratedColumn<String> get body =>
+      $composableBuilder(column: $table.body, builder: (column) => column);
+
+  GeneratedColumn<String> get entityKey =>
+      $composableBuilder(column: $table.entityKey, builder: (column) => column);
+
+  GeneratedColumn<String> get label =>
+      $composableBuilder(column: $table.label, builder: (column) => column);
+
+  GeneratedColumn<bool> get waitUploads => $composableBuilder(
+    column: $table.waitUploads,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<int> get attempts =>
+      $composableBuilder(column: $table.attempts, builder: (column) => column);
+
+  GeneratedColumn<String> get lastError =>
+      $composableBuilder(column: $table.lastError, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$PendingActionsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PendingActionsTable,
+          PendingActionRow,
+          $$PendingActionsTableFilterComposer,
+          $$PendingActionsTableOrderingComposer,
+          $$PendingActionsTableAnnotationComposer,
+          $$PendingActionsTableCreateCompanionBuilder,
+          $$PendingActionsTableUpdateCompanionBuilder,
+          (
+            PendingActionRow,
+            BaseReferences<
+              _$AppDatabase,
+              $PendingActionsTable,
+              PendingActionRow
+            >,
+          ),
+          PendingActionRow,
+          PrefetchHooks Function()
+        > {
+  $$PendingActionsTableTableManager(
+    _$AppDatabase db,
+    $PendingActionsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PendingActionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PendingActionsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PendingActionsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> method = const Value.absent(),
+                Value<String> path = const Value.absent(),
+                Value<String?> body = const Value.absent(),
+                Value<String> entityKey = const Value.absent(),
+                Value<String> label = const Value.absent(),
+                Value<bool> waitUploads = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<int> attempts = const Value.absent(),
+                Value<String?> lastError = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => PendingActionsCompanion(
+                id: id,
+                method: method,
+                path: path,
+                body: body,
+                entityKey: entityKey,
+                label: label,
+                waitUploads: waitUploads,
+                status: status,
+                attempts: attempts,
+                lastError: lastError,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String method,
+                required String path,
+                Value<String?> body = const Value.absent(),
+                required String entityKey,
+                required String label,
+                Value<bool> waitUploads = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<int> attempts = const Value.absent(),
+                Value<String?> lastError = const Value.absent(),
+                required DateTime createdAt,
+              }) => PendingActionsCompanion.insert(
+                id: id,
+                method: method,
+                path: path,
+                body: body,
+                entityKey: entityKey,
+                label: label,
+                waitUploads: waitUploads,
+                status: status,
+                attempts: attempts,
+                lastError: lastError,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$PendingActionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PendingActionsTable,
+      PendingActionRow,
+      $$PendingActionsTableFilterComposer,
+      $$PendingActionsTableOrderingComposer,
+      $$PendingActionsTableAnnotationComposer,
+      $$PendingActionsTableCreateCompanionBuilder,
+      $$PendingActionsTableUpdateCompanionBuilder,
+      (
+        PendingActionRow,
+        BaseReferences<_$AppDatabase, $PendingActionsTable, PendingActionRow>,
+      ),
+      PendingActionRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -3058,6 +4027,8 @@ class $AppDatabaseManager {
       $$PendingUploadsTableTableManager(_db, _db.pendingUploads);
   $$ApiCacheTableTableManager get apiCache =>
       $$ApiCacheTableTableManager(_db, _db.apiCache);
+  $$PendingActionsTableTableManager get pendingActions =>
+      $$PendingActionsTableTableManager(_db, _db.pendingActions);
 }
 
 // **************************************************************************

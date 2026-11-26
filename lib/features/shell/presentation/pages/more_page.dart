@@ -5,9 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-/// C11 · Más (supervisor y admin). En la fase 1 solo lleva al perfil; las
-/// demás entradas (inventario, incidencias, inspecciones, chat, métricas de
-/// equipo) se agregan con sus fases.
+/// C11 · Más (supervisor y admin): perfil y accesos a las secciones que no
+/// caben en la barra inferior.
 class MorePage extends ConsumerWidget {
   const MorePage({super.key});
 
@@ -33,6 +32,27 @@ class MorePage extends ConsumerWidget {
               title: session.user.fullName,
               subtitle: 'Perfil · ${session.roleName}',
               onTap: () => context.push('/profile'),
+            ),
+          ),
+          const SizedBox(height: CustomDimensions.spacingLg),
+          AppCard(
+            padding: EdgeInsets.zero,
+            child: Column(
+              children: [
+                if (session.permissions.contains('inventory.read'))
+                  AppListTile(
+                    icon: CustomIcons.equipment,
+                    title: 'Inventario',
+                    subtitle: 'Mi custodia, sacar artículos y reposición',
+                    onTap: () => context.push('/inventory'),
+                  ),
+                AppListTile(
+                  icon: CustomIcons.sync,
+                  title: 'Sincronización',
+                  subtitle: 'Fotos y cambios pendientes de enviar',
+                  onTap: () => context.push('/sync'),
+                ),
+              ],
             ),
           ),
         ],

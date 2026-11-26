@@ -17,6 +17,7 @@ class AppTextField extends StatelessWidget {
     this.onChanged,
     this.validator,
     this.enabled = true,
+    this.maxLines = 1,
   });
 
   final TextEditingController? controller;
@@ -29,6 +30,9 @@ class AppTextField extends StatelessWidget {
   final String? Function(String?)? validator;
   final bool enabled;
 
+  /// Más de 1 para notas y motivos.
+  final int maxLines;
+
   @override
   Widget build(BuildContext context) {
     return TextFormField(
@@ -38,6 +42,8 @@ class AppTextField extends StatelessWidget {
       onChanged: onChanged,
       validator: validator,
       enabled: enabled,
+      maxLines: obscureText ? 1 : maxLines,
+      minLines: 1,
       style: CustomTypography.verdana(
         fontSize: 15,
         color: CustomColors.primary,

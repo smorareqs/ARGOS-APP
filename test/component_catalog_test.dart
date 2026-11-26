@@ -41,7 +41,7 @@ void main() {
     );
     await tester.tap(find.text('Ver detalle de ejemplo'));
     await tester.pumpAndSettle();
-    expect(find.text('Iniciar revisión de salida'), findsOneWidget);
+    expect(find.text('Iniciar limpieza'), findsOneWidget);
 
     // Deja que Drift cierre sus consultas antes de terminar.
     await tester.pumpWidget(const SizedBox());

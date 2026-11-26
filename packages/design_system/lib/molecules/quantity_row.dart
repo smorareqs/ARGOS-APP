@@ -18,6 +18,8 @@ class QuantityRow extends StatelessWidget {
     required this.onConsumedChanged,
     this.unit,
     this.sku,
+    this.kept = 0,
+    this.onKeptChanged,
   });
 
   final String name;
@@ -31,8 +33,13 @@ class QuantityRow extends StatelessWidget {
   final String? unit;
   final String? sku;
 
+  /// Lo que la persona conserva para su siguiente tarea. Con
+  /// [onKeptChanged] se muestra un tercer contador "Me quedo".
+  final int kept;
+  final ValueChanged<int>? onKeptChanged;
+
   /// Positiva: faltan unidades; negativa: sobran.
-  int get difference => custody - returned - consumed;
+  int get difference => custody - returned - consumed - kept;
 
   @override
   Widget build(BuildContext context) {
@@ -107,6 +114,25 @@ class QuantityRow extends StatelessWidget {
               ),
             ],
           ),
+          if (onKeptChanged != null) ...[
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'ME QUEDO PARA LA SIGUIENTE',
+                    style: CustomTypography.label,
+                  ),
+                ),
+                NumberStepper(
+                  value: kept,
+                  max: custody,
+                  semanticLabel: 'Me quedo con $name',
+                  onChanged: onKeptChanged,
+                ),
+              ],
+            ),
+          ],
           if (diff != 0) ...[
             const SizedBox(height: 12),
             Container(

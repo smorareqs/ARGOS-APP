@@ -1,7 +1,8 @@
 import 'dart:io';
 
 import 'package:argos_app/features/camera/presentation/pages/camera_page.dart';
-import 'package:argos_app/features/tasks/models/task_summary.dart';
+import 'package:argos_app/features/tasks/data/repositories/tasks_repository.dart';
+import 'package:argos_app/features/tasks/models/task_detail.dart';
 import 'package:argos_app/features/tasks/presentation/pages/task_detail_page.dart';
 import 'package:argos_app/features/uploads/models/pending_upload.dart';
 import 'package:argos_app/features/uploads/presentation/providers/upload_providers.dart';
@@ -287,25 +288,33 @@ class _DetailDemo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final today = DateTime.now();
-    return TaskDetailPage(
-      task: TaskSummary(
-        id: 'demo',
-        type: TaskType.checkoutReview,
-        status: TaskStatus.pending,
-        isLate: true,
-        scheduledDate: DateTime(today.year, today.month, today.day),
-        windowStart: '09:00',
-        windowEnd: '11:00',
-        notes: 'Check-out a las 08:40. Revisar la terraza y dejar toallas extra.',
-        checklistDone: 0,
-        checklistTotal: 18,
-        property: const TaskProperty(
-          id: 'demo',
-          code: 'LAU-01',
-          name: 'Casa Laurel',
-          address: 'Calle de los Laureles 14, Escazú',
-        ),
-      ),
-    );
+    final iso = '${today.year.toString().padLeft(4, '0')}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+    final json = <String, dynamic>{
+      'id': 'demo',
+      'number': 128,
+      'type': 'checkout_cleaning',
+      'status': 'pending',
+      'priority': 'high',
+      'late': true,
+      'date': iso,
+      'start': '09:00',
+      'end': '11:00',
+      'notes': 'Check-out a las 08:40. Revisar la terraza y dejar toallas extra.',
+      'property_id': 'demo',
+      'property_code': 'LAU-01',
+      'property_name': 'Casa Laurel',
+      'property_address': 'Calle de los Laureles 14, Escazú',
+      'reservation_code': 'R-2528',
+      'items': [
+        for (final (i, t) in ['Tender la cama', 'Reponer toallas', 'Desinfectar el baño'].indexed)
+          {'id': 'i$i', 'section': i < 1 ? 'Habitación' : 'Baño', 'position': i, 'text': t, 'is_done': i == 0},
+      ],
+      'checklist': [
+        {'name': 'Habitación', 'total': 1, 'done': 1},
+        {'name': 'Baño', 'total': 2, 'done': 0},
+      ],
+      'can_execute': true,
+    };
+    return TaskDetailView(load: TaskLoad(task: TaskDetail.fromJson(json)));
   }
 }
