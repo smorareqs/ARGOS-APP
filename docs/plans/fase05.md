@@ -1,7 +1,13 @@
 # Fase 5 — Asistencia, nómina, disciplina, métricas e incentivos
 
-> Estado: pendiente. Requiere fase 2 (tareas, empleados) y fase 3 (notificaciones).
-> La nómina se habilita con la bandera `payroll` del tenant.
+> Estado: en curso. Parte de Persona A **hecha** (2026-11-23): migración `tenant/0008_payroll`,
+> módulos `payroll` (períodos, cálculo por esquema, Bono 14, aguinaldo, IGSS, bonificación
+> incentivo, revisión con historial, cierre, Excel y boletas PDF) y `disciplinary` (acciones con
+> adjuntos, correo, acuse), con la web conectada (W-D2 pestañas Nómina y Disciplina, W-J2 a W-J5 y
+> payroll-grid). W-J1 asistencia y W-K1–K2 métricas siguen simuladas hasta que exista la API de B.
+> Contrato en §4.1. Pendiente (Persona B): `tenant/0009_attendance_metrics`, `attendance`,
+> `metrics`, `incentives` y la app. La nómina se habilita con la bandera `payroll` del tenant;
+> disciplina no depende de la bandera.
 
 ## 1. Objetivo
 
@@ -154,6 +160,148 @@ late_count…), `target numeric`, `comparator varchar(2)` (`>=`, `<=`),
 | `GET /disciplinary/me`, `POST /disciplinary/{id}/acknowledge` | `hr.disciplinary.own` |
 | `GET /metrics/me`, `/metrics/team`, `/metrics/all`, `/metrics/properties` | `metrics.own` / `metrics.team` / `metrics.all` |
 | `GET/POST/PATCH /goals`, `GET /incentives`, `POST /incentives/{id}/approve|reject` | `hr.payroll.manage` |
+
+### 4.1 Contrato implementado (Persona A, 2026-11-23)
+
+Todo bajo `/api/v1`. Las rutas de `/payroll` piden la bandera `payroll` (sin ella: 403 "Este
+módulo no está activo en tu empresa."); `/disciplinary` no. Fechas `YYYY-MM-DD`, montos en la
+moneda del tenant redondeados a 2 decimales. Lo ajeno o fuera de alcance responde **404**. OpenAPI
+completo en `/docs`.
+
+**Configuración** (`hr.payroll.manage`)
+
+* `GET /payroll/settings` → `Settings`: `igss_employee_rate` (0.0483), `igss_employer_rate`
+  (0.1267), `incentive_bonus_monthly` (250), `bonus14_month` (7), `aguinaldo_month` (12),
+  `monthly_days` (30), `daily_hours` (8), `min_minutes_for_day` (240), `updated_at`.
+* `PUT /payroll/settings` con los mismos campos (sin `updated_at`). Va a bitácora.
+
+**Períodos** (leer: `hr.payroll.manage` o `hr.payroll.export`; escribir: `hr.payroll.manage`)
+
+* `GET /payroll/periods` → `PeriodRead[]` (recientes primero): `id, name, kind (biweekly|monthly),
+  period_start, period_end, status (draft|review|closed), computed_at, reviewed_at, closed_at,
+  closed_by_name, employees_count, gross_total, igss_total, net_total, bonus14, aguinaldo (si ese
+  período los paga), has_export, created_at, updated_at`.
+* `GET /payroll/periods/{id}` → `PeriodDetail` = lo anterior más `entries: Line[]`, `totals`
+  (`days, hours, cleanings, base, overtime, incentives, other_earnings, incentive_bonus, bonus14,
+  aguinaldo, gross, igss, other_deductions, net, igss_employer`), `currency` y `sources`
+  (`attendance, tasks, incentives`: `false` si la tabla de B aún no existe).
+* `POST /payroll/periods` `{name?, kind, period_start, period_end}` → 201. Sin nombre se arma
+  ("Quincena 1–15 nov 2026", "Noviembre 2026"). Máximo 62 días; dos del mismo tipo no se cruzan
+  (`EXCLUDE` en BD → 422 "Ya hay un período de ese tipo que se cruza con esas fechas.").
+* `DELETE /payroll/periods/{id}` solo en borrador (409 si no).
+* `POST /payroll/periods/{id}/compute` (solo `draft`, 409 si no): borra y vuelve a crear las
+  líneas. `/review` (draft → review; 422 "Calcula el período antes…" sin líneas), `/reopen`
+  (review → draft) y `/close` (review → closed). Cerrado es inmutable: 409 "El período está
+  cerrado y no se puede cambiar."
+
+**Líneas** (`Line`)
+
+* Campos: `id, period_id, employee_id, user_id, employee_code, full_name, position, pay_type
+  (fixed_monthly|per_day|per_hour|per_cleaning), pay_rate, on_payroll, attendance_source
+  (attendance|schedule), days_worked, hours_worked, cleanings_count, base_amount, overtime_amount,
+  incentives_amount, other_earnings, incentive_bonus_amount, bonus14_amount, aguinaldo_amount,
+  igss_employee, other_deductions, gross_amount, net_amount, bonus_detail, manual_fields[],
+  history[], notes, has_payslip, updated_at`. Código, nombre, puesto, esquema y tarifa son una
+  foto del momento del cálculo.
+* `bonus_detail`: `{bonus14?, aguinaldo?}`, cada uno `{kind, window_start, window_end,
+  months_history, months_estimated, earnings, amount}` para explicar la cifra.
+* `PATCH /payroll/periods/{id}/entries/{entry_id}` (`hr.payroll.manage`, solo en `review`;
+  409 si no): cualquiera de `days_worked, hours_worked, cleanings_count, base_amount,
+  overtime_amount, incentives_amount, other_earnings, incentive_bonus_amount, bonus14_amount,
+  aguinaldo_amount, other_deductions`, más `notes` y `reason`. Si cambian días, horas o
+  limpiezas y la base no se tocó, la base se recalcula con la tarifa. IGSS, devengado y líquido se
+  recalculan siempre. Cada campo cambiado entra a `manual_fields` y a `history[]`
+  (`field, from, to, actor_id, actor_name, at, note`). Sin cambios: 422 "No hay cambios.".
+* `GET /payroll/entries?employee_id=` (`hr.payroll.manage`) → `EmployeeEntry[]` = `Line` +
+  `period_name, period_start, period_end, period_status` (ficha del colaborador, W-D2).
+
+**Mis boletas (app, B20)**
+
+* `GET /payroll/me` (`hr.attendance.own`) → `MyPayslip[]`: solo períodos **cerrados**, como
+  `EmployeeEntry` más `payslip_url` (S3 prefirmada, 15 min) y `expires_at`. 404 "No tienes
+  ficha laboral en esta empresa." si el usuario no tiene ficha.
+* `GET /payroll/entries/{id}/payslip.pdf`: con `hr.payroll.export|manage` cualquier línea; con
+  `hr.attendance.own` solo la propia de un período cerrado (si no, 404).
+
+**Descargas** (`hr.payroll.export` o `hr.payroll.manage`)
+
+* `GET /payroll/periods/{id}/export.xlsx`: hojas "Nómina" (todas las columnas y totales),
+  "Bono 14" / "Aguinaldo" (si el período los paga: ventana, meses con historial y estimados,
+  devengado, monto) y "Asistencia" (fuente, días, horas, limpiezas).
+* `GET /payroll/periods/{id}/payslips.pdf`: todas las boletas, una por página.
+* Responden el archivo con `Content-Disposition: attachment; filename="nomina-quincena-….xlsx"`
+  (expuesto por CORS para que la web use ese nombre).
+
+**Disciplina**
+
+* `GET /disciplinary?employee_id&pending&cursor&limit` (`hr.disciplinary.manage`) →
+  `{items: ActionRead[], next_cursor}`. `ActionRead`: `id, employee_id, user_id, employee_name,
+  employee_code, position, type (verbal|written|suspension|other), occurred_on, description,
+  issued_by, issued_by_name, suspension_from, suspension_to, acknowledged_at,
+  acknowledgement_note, attachments[] ({file_id, name, content_type, url, expires_at}),
+  created_at, updated_at`.
+* `POST /disciplinary` (`hr.disciplinary.manage`) `{employee_id, type, occurred_on,
+  description (≥ 10), suspension_from?, suspension_to?, attachment_file_ids[]}` → 201. Los
+  adjuntos se suben antes con `POST /files/presign-upload` (módulo `disciplinary`, tipo `attachment`:
+  PDF o imagen, 15 MB) y `POST /files/{id}/confirm`. Fechas de suspensión solo en `suspension` y obligatorias ahí.
+  Manda el correo `disciplinary_notice` y publica `disciplinary.created`.
+* `GET /disciplinary/me` (`hr.disciplinary.own`) → `ActionRead[]` propias.
+* `GET /disciplinary/{id}`: con `manage` cualquiera; con `own` solo la propia (si no, 404).
+* `POST /disciplinary/{id}/acknowledge` (`hr.disciplinary.own`, solo la propia) `{note?}`: una
+  vez (422 "Ya diste acuse de esta acción."). Publica `disciplinary.acknowledged`.
+
+**Reglas de cálculo tal como quedaron**
+
+* Días y horas: de `attendance_records` si la tabla existe (un día cuenta con
+  `worked_minutes ≥ min_minutes_for_day`); si no, del horario semanal de la ficha
+  (`employee_schedules`, o lunes a viernes × `daily_hours`) dentro de los días contratados.
+  `attendance_source` dice cuál se usó.
+* Base: fijo mensual = tarifa (mitad en quincena) prorrateada por días contratados; por día,
+  hora o limpieza = cantidad × tarifa.
+* Bonificación incentivo (Decreto 37-2001): `incentive_bonus_monthly` al mes, la mitad por
+  quincena, solo `on_payroll`, sin IGSS.
+* IGSS laboral = (base + extras + otros devengos) × tasa, solo `on_payroll`.
+  `gross = base + extras + incentivos + otros + bonificación incentivo + Bono 14 + aguinaldo`;
+  `net = gross − IGSS − otros descuentos`. `totals.igss_employer` informa la cuota patronal.
+* Bono 14 y aguinaldo: se pagan en el período que toca los días 1–15 del mes configurado
+  (julio y diciembre), salvo que ya se hayan pagado en otro período de esa ventana. Monto =
+  salario diario × días contratados en la ventana (12 meses que terminan el día anterior) ÷ 365
+  × 12. El salario diario sale de lo devengado (base + extras) en períodos cerrados en ARGOS;
+  los días sin historial se estiman con ese salario diario o, sin historial, con el salario
+  mensual actual × 12 / 365. Así quien tiene menos de un año recibe la parte proporcional.
+* Al cerrar: guarda el Excel y una boleta por línea en S3 (`tenants/{tenant_id}/payroll/…`, filas
+  en `files` con módulo `payroll`), marca `incentive_awards` aprobados como `paid` con
+  `payroll_entry_id` (si la tabla existe), envía `payslip_available` a quien tenga correo y
+  publica `payroll.closed`.
+
+**Tablas de Persona B que lee el cálculo (solo si existen, con `to_regclass`)**
+
+| Tabla | Columnas que usa |
+| --- | --- |
+| `attendance_records` | `employee_id, clock_in_at, clock_out_at, worked_minutes` (solo cerrados) |
+| `tasks` | `assigned_to` (user_id), `type = 'cleaning'`, `status = 'validated'`, `finished_at` |
+| `incentive_awards` | `employee_id, amount, status ('approved' → 'paid'), period_end, payroll_entry_id` |
+
+**Eventos** (bus interno; B engancha push en `notifications`)
+
+| Evento | `Data` |
+| --- | --- |
+| `payroll.closed` | `payroll.ClosedEvent{Period PeriodRead; Entries []{EntryID, EmployeeID, UserID, NetAmount}}` |
+| `disciplinary.created` | `disciplinary.ActionRead` |
+| `disciplinary.acknowledged` | `disciplinary.ActionRead` |
+
+**Diferencias con lo planeado**
+
+* Excel y PDF con generadores propios (`core/xlsx`, `core/pdf`) en lugar de `excelize` y
+  `maroto`: sin dependencias nuevas. Se puede cambiar sin tocar el contrato.
+* Columnas extra en `payroll_entries`: `incentive_bonus_amount` (bonificación de ley),
+  `attendance_source`, `bonus_detail`, `manual_fields`, `history`, `notes` y la foto del
+  colaborador. Los "ajustes" quedaron como `other_earnings`/`other_deductions` + nota.
+* Estados extra: `reopen` (revisión → borrador) y borrar un borrador.
+* Bono 14 y aguinaldo con salario diario × días ÷ 365 × 12 (no "suma / 12"), para que los
+  esquemas por limpieza o por hora sin historial no den 0.
+* Disciplina no depende de la bandera `payroll`. `GET /employees` también responde a
+  `hr.payroll.manage`, `hr.disciplinary.manage` y `hr.attendance.manage` (para elegir colaborador).
 
 ## 5. App móvil
 
