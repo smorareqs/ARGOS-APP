@@ -11,7 +11,14 @@ import 'package:argos_app/features/auth/presentation/pages/tenant_select_page.da
 import 'package:argos_app/features/auth/presentation/pages/totp_page.dart';
 import 'package:argos_app/features/auth/presentation/pages/unlock_page.dart';
 import 'package:argos_app/features/dev/presentation/pages/component_catalog_page.dart';
+import 'package:argos_app/features/guest/presentation/pages/guest_areas_page.dart';
+import 'package:argos_app/features/guest/presentation/pages/guest_home_page.dart';
+import 'package:argos_app/features/guest/presentation/pages/guest_login_page.dart';
+import 'package:argos_app/features/hospitality/models/hospitality.dart';
 import 'package:argos_app/features/profile/presentation/pages/profile_page.dart';
+import 'package:argos_app/features/reservations/presentation/pages/guest_document_page.dart';
+import 'package:argos_app/features/reservations/presentation/pages/inspection_page.dart';
+import 'package:argos_app/features/reservations/presentation/pages/reservation_detail_page.dart';
 import 'package:argos_app/features/shell/presentation/pages/home_shell_page.dart';
 import 'package:argos_app/features/sync/presentation/pages/sync_page.dart';
 import 'package:argos_app/features/tasks/models/task_summary.dart';
@@ -146,6 +153,43 @@ GoRouter appRouter(Ref ref) {
         path: '/tickets/:id',
         builder: (context, state) => TicketDetailPage(ticketId: state.pathParameters['id']!),
       ),
+      // Fase 4: reservas del supervisor (C6–C10).
+      GoRoute(
+        path: '/reservations/:id',
+        builder: (context, state) => ReservationDetailPage(reservationId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/reservations/:id/inspection',
+        builder: (context, state) => InspectionPage(
+          reservationId: state.pathParameters['id']!,
+          kind: state.uri.queryParameters['kind'] == 'pre_arrival' ? 'pre_arrival' : 'post_departure',
+        ),
+      ),
+      GoRoute(
+        path: '/guests/:id/document',
+        builder: (context, state) => GuestDocumentPage(
+          guestId: state.pathParameters['id']!,
+          guestName: state.uri.queryParameters['name'],
+          propertyCode: state.uri.queryParameters['property'],
+        ),
+      ),
+      // Fase 4: modo huésped (A9, F1–F9).
+      GoRoute(
+        path: '/guest-login',
+        builder: (context, state) => GuestLoginPage(token: state.uri.queryParameters['token']),
+      ),
+      GoRoute(path: '/guest', builder: (context, state) => const GuestHomePage()),
+      GoRoute(path: '/guest/areas', builder: (context, state) => const GuestAreasPage()),
+      GoRoute(
+        path: '/guest/areas/:id',
+        builder: (context, state) => GuestAreaPage(
+          areaId: state.pathParameters['id']!,
+          area: state.extra is SharedArea ? state.extra! as SharedArea : null,
+        ),
+      ),
+      GoRoute(path: '/guest/parking', builder: (context, state) => const GuestParkingPage()),
+      GoRoute(path: '/guest/report', builder: (context, state) => const GuestReportPage()),
+      GoRoute(path: '/guest/help', builder: (context, state) => const GuestHelpPage()),
     ],
     errorBuilder: (context, state) => Scaffold(
       body: Center(child: Text('Ruta no encontrada: ${state.uri}')),

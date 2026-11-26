@@ -47,6 +47,31 @@ void main() {
     expect(find.text('¿Olvidaste tu contraseña?'), findsOneWidget);
   });
 
+  testWidgets('huésped: del login entra con su código a Mi reserva y sale', (tester) async {
+    tester.view.physicalSize = const Size(800, 2400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await startApp(tester, Harness(now: DateTime.now()));
+
+    await tester.tap(find.text('Soy huésped, tengo un código'));
+    await settle(tester);
+    expect(find.text('Bienvenido'), findsOneWidget);
+    await tester.enterText(find.byType(TextFormField).at(0), 'huesped-cst');
+    await tester.enterText(find.byType(TextFormField).at(1), 'tomas.reyes@correo.sv');
+    await tester.tap(find.text('Entrar'));
+    await settle(tester);
+
+    expect(find.text('Hola, Tomás'), findsOneWidget);
+    expect(find.text('Áreas comunes'), findsOneWidget);
+    await tester.tap(find.text('Ayuda').last);
+    await settle(tester);
+    await tester.tap(find.text('Cerrar sesión de huésped'));
+    await settle(tester);
+    await tester.tap(find.text('Cerrar sesión').last);
+    await settle(tester);
+    expect(find.byType(LoginPanel), findsOneWidget);
+  });
+
   testWidgets('credenciales incorrectas se muestran bajo el formulario', (tester) async {
     await startApp(tester, Harness());
     await login(tester, 'ana@argos.demo', 'mala');

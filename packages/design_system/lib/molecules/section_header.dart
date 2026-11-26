@@ -6,11 +6,7 @@ import 'package:flutter/material.dart';
 /// Encabezado de sección — número + título en mayúsculas + regla horizontal.
 /// Ref: ARGOS Design System · "01 · Paleta de color", etc.
 class SectionHeader extends StatelessWidget {
-  const SectionHeader({
-    super.key,
-    required this.title,
-    this.number,
-  });
+  const SectionHeader({super.key, required this.title, this.number});
 
   /// Título de la sección (se muestra en MAYÚSCULAS).
   final String title;
@@ -24,13 +20,17 @@ class SectionHeader extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Text(
-          text.toUpperCase(),
-          style: CustomTypography.verdana(
-            fontSize: 11,
-            fontWeight: FontWeight.bold,
-            color: CustomColors.textSecondary,
-          ).copyWith(letterSpacing: 2),
+        Flexible(
+          child: Text(
+            text.toUpperCase(),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: CustomTypography.verdana(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: CustomColors.textSecondary,
+            ).copyWith(letterSpacing: 2),
+          ),
         ),
         const SizedBox(width: CustomDimensions.spacingMd),
         const Expanded(child: Divider(color: CustomColors.divider, height: 1)),

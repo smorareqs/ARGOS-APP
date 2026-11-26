@@ -86,6 +86,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             onSubmit: _submit,
             onForgotPassword: () => context.push('/forgot-password'),
             errorText: _error,
+            secondaryLabel: 'Soy huésped, tengo un código',
+            onSecondary: () => context.push('/guest-login'),
             footer: version == null || version.isEmpty ? 'ARGOS' : 'ARGOS · v$version',
             userValidator: Validators.email,
             passwordValidator: (value) =>

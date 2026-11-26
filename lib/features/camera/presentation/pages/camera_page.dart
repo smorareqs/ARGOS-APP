@@ -15,6 +15,7 @@ class CameraRequest {
     this.reference,
     this.referenceLabel = 'Antes',
     this.maxPhotos,
+    this.documentGuide = false,
   });
 
   /// Texto arriba ("Tender la cama").
@@ -28,6 +29,10 @@ class CameraRequest {
   final ImageProvider? reference;
   final String referenceLabel;
   final int? maxPhotos;
+
+  /// Marco con la forma de una tarjeta de identidad para encuadrar el DPI o
+  /// el pasaporte (C8).
+  final bool documentGuide;
 }
 
 /// Abre la cámara a pantalla completa. Devuelve las fotos ya comprimidas y
@@ -314,6 +319,7 @@ class _CameraPageState extends State<CameraPage> with WidgetsBindingObserver {
                 child: Image(image: reference, fit: BoxFit.cover),
               ),
             ),
+          if (widget.request.documentGuide) const IgnorePointer(child: _DocumentGuide()),
         ],
       ),
     );
@@ -701,4 +707,61 @@ class _Pill extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Marco de tarjeta (proporción ID-1, 85,6 × 54 mm) con el resto oscurecido.
+class _DocumentGuide extends StatelessWidget {
+  const _DocumentGuide();
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, c) {
+        final w = c.maxWidth * 0.86;
+        final h = w / 1.586;
+        return Stack(
+          children: [
+            Positioned.fill(child: CustomPaint(painter: _ScrimPainter(Size(w, h)))),
+            Center(
+              child: Container(
+                width: w,
+                height: h,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: CustomColors.secondary, width: 2.5),
+                ),
+              ),
+            ),
+            Align(
+              alignment: Alignment(0, (h / c.maxHeight) + 0.12),
+              child: Text(
+                'Encaja el documento dentro del marco',
+                style: CustomTypography.verdana(fontSize: 13, color: Colors.white),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _ScrimPainter extends CustomPainter {
+  _ScrimPainter(this.hole);
+
+  final Size hole;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Rect.fromCenter(center: size.center(Offset.zero), width: hole.width, height: hole.height);
+    final path = Path.combine(
+      PathOperation.difference,
+      Path()..addRect(Offset.zero & size),
+      Path()..addRRect(RRect.fromRectAndRadius(rect, const Radius.circular(14))),
+    );
+    canvas.drawPath(path, Paint()..color = Colors.black.withValues(alpha: 0.45));
+  }
+
+  @override
+  bool shouldRepaint(_ScrimPainter old) => old.hole != hole;
 }

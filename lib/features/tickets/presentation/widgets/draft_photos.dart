@@ -13,7 +13,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// solución de una incidencia). Se suben en cuanto se toman; el formulario
 /// se envía con los `file_id` cuando todas terminaron.
 class DraftPhotos {
-  DraftPhotos(String draftId) : entityType = '${draftEntityPrefix}ticket', entityId = draftId;
+  DraftPhotos(String draftId, {String entity = 'ticket'}) : entityType = '$draftEntityPrefix$entity', entityId = draftId;
 
   final String entityType;
   final String entityId;
@@ -36,10 +36,12 @@ class DraftPhotos {
     required String kind,
     String? title,
     String? propertyCode,
+    int maxPhotos = 6,
+    bool documentGuide = false,
   }) async {
     final shots = await openCamera(
       context,
-      CameraRequest(title: title, propertyCode: propertyCode, maxPhotos: 6),
+      CameraRequest(title: title, propertyCode: propertyCode, maxPhotos: maxPhotos, documentGuide: documentGuide),
     );
     if (shots == null) return;
     final queue = ref.read(uploadQueueProvider);

@@ -9,6 +9,7 @@ import 'package:argos_app/features/auth/data/datasources/biometric_datasource.da
 import 'package:argos_app/features/auth/data/mock/auth_mock_routes.dart';
 import 'package:argos_app/features/auth/presentation/providers/auth_state.dart';
 import 'package:argos_app/features/auth/presentation/providers/session_controller.dart';
+import 'package:argos_app/features/hospitality/data/mock/hospitality_mock_routes.dart';
 import 'package:argos_app/features/notifications/data/mock/notifications_mock_routes.dart';
 import 'package:argos_app/features/tasks/data/mock/tasks_mock_routes.dart';
 import 'package:argos_app/features/tickets/data/mock/tickets_mock_routes.dart';
@@ -70,7 +71,8 @@ class Harness {
     Map<String, String> storage = const {},
     bool biometricAvailable = false,
     bool online = true,
-  }) : clock = TestClock(DateTime(2026, 10, 22, 9)),
+    DateTime? now,
+  }) : clock = TestClock(now ?? DateTime(2026, 10, 22, 9)),
        backend = MockBackend(latency: Duration.zero),
        biometrics = FakeBiometrics(available: biometricAvailable),
        connectivity = FakeConnectivity(online: online) {
@@ -79,6 +81,7 @@ class Harness {
     registerTasksMockRoutes(backend, clock: clock.now);
     registerNotificationsMockRoutes(backend, clock: clock.now, liveDemo: false);
     registerTicketsMockRoutes(backend, clock: clock.now);
+    registerHospitalityMockRoutes(backend, clock: clock.now);
   }
 
   final TestClock clock;

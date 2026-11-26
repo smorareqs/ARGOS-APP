@@ -12,6 +12,9 @@ const _available = [
   '/notifications',
   '/home/',
   '/profile',
+  '/reservations/',
+  '/security',
+  '/guest',
 ];
 
 bool isAppRouteAvailable(String route) =>
@@ -22,6 +25,15 @@ void openAppRoute(BuildContext context, String? route) {
   if (route == null || route.isEmpty) return;
   if (route == '/alerts') {
     context.push('/notifications');
+    return;
+  }
+  // Alarmas de salida (seguridad): la pestaña de alarmas.
+  if (route == '/security' || route.startsWith('/security/')) {
+    context.go('/home/alarms');
+    return;
+  }
+  if (route == '/guest' || route.startsWith('/guest/')) {
+    context.go(route);
     return;
   }
   if (!isAppRouteAvailable(route)) {

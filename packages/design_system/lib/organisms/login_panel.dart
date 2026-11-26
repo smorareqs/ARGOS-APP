@@ -28,6 +28,8 @@ class LoginPanel extends StatelessWidget {
     this.userKeyboardType = TextInputType.text,
     this.userAutofillHints,
     this.errorText,
+    this.secondaryLabel,
+    this.onSecondary,
   });
 
   final TextEditingController userController;
@@ -48,6 +50,10 @@ class LoginPanel extends StatelessWidget {
 
   /// Error del envío (p. ej. credenciales incorrectas), bajo el formulario.
   final String? errorText;
+
+  /// Enlace bajo el botón (p. ej. "Soy huésped, tengo un código").
+  final String? secondaryLabel;
+  final VoidCallback? onSecondary;
 
   @override
   Widget build(BuildContext context) {
@@ -234,7 +240,20 @@ class LoginPanel extends StatelessWidget {
             trailingIcon: CustomIcons.arrowForward,
             onPressed: onSubmit,
           ),
-          const SizedBox(height: 14),
+          if (secondaryLabel != null) ...[
+            const SizedBox(height: 6),
+            Center(
+              child: TextButton(
+                onPressed: onSecondary,
+                style: TextButton.styleFrom(foregroundColor: CustomColors.secondary),
+                child: Text(
+                  secondaryLabel!,
+                  style: CustomTypography.verdana(fontSize: 13, color: CustomColors.secondary, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+          ] else
+            const SizedBox(height: 14),
           Text(
             footer,
             textAlign: TextAlign.center,

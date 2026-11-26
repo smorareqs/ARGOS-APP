@@ -18,6 +18,7 @@ class SecureStorageService {
   static const _lastTenantKey = 'last_tenant_id';
   static const _rememberTenantKey = 'remember_tenant';
   static const _lastSyncKey = 'fecha_ultimo_sync';
+  static const _guestSessionKey = 'guest_session';
 
   /// Claves del login local anterior (MD5), eliminado en la fase 1.
   static const _legacyKeys = ['session_token', 'device_serial'];
@@ -77,6 +78,16 @@ class SecureStorageService {
 
   Future<void> writeLastSyncDate(String isoDate) =>
       _storage.write(key: _lastSyncKey, value: isoDate);
+
+  // ── Modo huésped (A9) ──────────────────────────────────
+  /// Sesión del huésped (JSON con el token y su vencimiento). Dura hasta 24 h
+  /// después de la salida y no se renueva: es independiente de la del personal.
+  Future<String?> readGuestSession() => _storage.read(key: _guestSessionKey);
+
+  Future<void> writeGuestSession(String json) =>
+      _storage.write(key: _guestSessionKey, value: json);
+
+  Future<void> deleteGuestSession() => _storage.delete(key: _guestSessionKey);
 
   /// Borra la sesión y el inicio rápido. Conserva el id del dispositivo y la
   /// preferencia de empresa, que no son datos de sesión.

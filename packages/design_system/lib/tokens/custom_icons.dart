@@ -95,4 +95,17 @@ abstract final class CustomIcons {
   static const IconData directions = Icons.directions_outlined;
   static const IconData notes = Icons.sticky_note_2_outlined;
   static const IconData location = Icons.place_outlined;
+
+  // ── Fase 4: huéspedes, parqueos y seguridad ──
+  static const IconData parking = Icons.local_parking_rounded;
+  static const IconData car = Icons.directions_car_outlined;
+  static const IconData guest = Icons.badge_outlined;
+  static const IconData checkIn = Icons.login_rounded;
+  static const IconData checkOut = Icons.logout_rounded;
+  static const IconData deposit = Icons.payments_outlined;
+  static const IconData document = Icons.credit_card_outlined;
+  static const IconData calendar = Icons.calendar_month_outlined;
+  static const IconData people = Icons.group_outlined;
+  static const IconData phone = Icons.call_outlined;
+  static const IconData wifi = Icons.wifi_rounded;
 }

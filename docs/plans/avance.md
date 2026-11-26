@@ -11,7 +11,7 @@ planes por fase están en esta carpeta.
 | 1 | [fase01.md](fase01.md) | En curso | Backend y web hechos (2026-11-21); falta la app de B y dos pendientes de A |
 | 2 | [fase02.md](fase02.md) | Hecha | A (2026-11-21) y B (2026-11-26): tareas, inventario y la app de ejecución |
 | 3 | [fase03.md](fase03.md) | Hecha | A (2026-11-22) y B (2026-11-26): avisos, push, tiempo real e incidencias en la app |
-| 4 | [fase04.md](fase04.md) | En curso | Parte de A hecha (2026-11-22); faltan acceso de huéspedes, seguridad, parqueos, áreas comunes y la app de B |
+| 4 | [fase04.md](fase04.md) | Hecha | A (2026-11-22) y B (2026-11-26): reservas y web; huéspedes, seguridad, parqueos, áreas comunes y la app |
 | 5 | [fase05.md](fase05.md) | En curso | Parte de A hecha (2026-11-23): nómina y disciplina; faltan asistencia, métricas, incentivos y la app de B |
 | 6 | [fase06.md](fase06.md) | En curso | Parte de A hecha (2026-11-23): facturación, claves API, reservas del sitio, aislamiento, límites, OpenAPI; faltan chat, cerraduras, retención y la app de B |
 
@@ -725,3 +725,27 @@ Maps SDK restringida a la app (la del navegador está restringida por dominio).
 * [B] Pruebas en verde: integración del backend (bandeja, socket, push con token caducado,
   preferencias, recordatorios) y 75 de la app. Pendiente para Chris: probar el push en un teléfono real
   con el proyecto de Firebase.
+* [B] **Fase 4 en el backend: huéspedes, parqueos, áreas comunes y seguridad.** Migración
+  `0007_guest_parking_areas` (accesos de huésped, alarmas, espacios y asignaciones de parqueo, áreas y sus
+  reservas). Módulos `guestaccess` (enlace mágico y código XXXX-XXXX con hash, vence a la salida + 24 h,
+  JWT de tipo `guest`, 10 intentos por minuto por IP), `parking` (choque de fechas con `EXCLUDE`, la salida
+  es exclusiva; mueve o borra la asignación si la reserva cambia), `sharedareas` (capacidad por personas,
+  bloques por día, anticipación del huésped, cancelar hasta 1 h antes) y `securityops` (alarma 30 min
+  antes y a la hora exacta en la zona de la empresa, push a seguridad, escala a alerta a los 60 min;
+  "atendida" cierra las dos). Rutas `/guest/*`, `/parking/*`, `/shared-areas/*`, `/security/*` y
+  `/reservations/in-house`. Semilla con huéspedes de prueba: `HUESPED-GAR` (ana.gomez@correo.sv) y
+  `HUESPED-CST` (tomas.reyes@correo.sv). OpenAPI y `operacion.md` al día.
+* [B] **Fase 4 en la app.** Modo huésped aparte de la sesión del personal (A9 por código o enlace
+  `argos://guest?token=`, sesión guardada hasta el vencimiento): F1 Mi reserva (cambia antes, durante y
+  después), F3–F5 áreas comunes con horarios y lugares libres, F6 mi parqueo, F7 reportar un problema, F9
+  ayuda. Seguridad: D1 tablero (contadores, búsqueda por nombre o placa, salidas con su alarma, llegadas,
+  hospedados por edificio, áreas y parqueos), D2 alarmas con "Marcar atendida" y nota (se recarga por tiempo
+  real), D3 ficha sin documentos ni contacto, pestaña de áreas del día. Supervisor: C5 reservas
+  (llegadas, salidas, hospedados, próximas), C6 detalle con check-in/check-out según el estado y lo que
+  falta, C7 registro de huésped (reutiliza al ya registrado por documento), C8 foto del documento frente y
+  reverso con marco de encuadre en la cámara, C9 depósito (recibir, devolver, retener), asignar parqueo y
+  C10 inspección con fotos por área y hallazgos (cargo al depósito, incidencia).
+* [B] Pruebas en verde: integración del backend (`TestGuestParkingAreasAndSecurity`) y 88 de la app (flujo
+  completo del huésped desde el login, check-in con registro y depósito, alarmas, parqueo y las pantallas a
+  390 px). Pendiente: ofrecer la inspección `pre_arrival` con las fotos "después" al validar una limpieza
+  ligada a reserva (hoy se hace desde C6).

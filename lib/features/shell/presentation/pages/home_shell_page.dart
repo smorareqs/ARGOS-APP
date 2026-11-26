@@ -12,6 +12,8 @@ import 'package:argos_app/features/shell/presentation/widgets/coming_soon_tab.da
 import 'package:argos_app/features/tasks/presentation/pages/team_page.dart';
 import 'package:argos_app/features/tickets/presentation/pages/tickets_page.dart';
 import 'package:design_system/design_system.dart';
+import 'package:argos_app/features/reservations/presentation/pages/reservations_page.dart';
+import 'package:argos_app/features/security/presentation/pages/security_pages.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -68,6 +70,10 @@ class HomeShellPage extends ConsumerWidget {
             ShellTab.more => const MorePage(),
             ShellTab.alerts => const NotificationsPage(),
             ShellTab.tickets => const TicketsPage(),
+            ShellTab.reservations => const ReservationsPage(),
+            ShellTab.security => const SecurityBoardPage(),
+            ShellTab.alarms => const SecurityAlarmsPage(),
+            ShellTab.sharedAreas => const SecurityAreasPage(),
             _ => ComingSoonTab(tab: tab),
           },
       ],
