@@ -22,9 +22,7 @@ Future<void> settle(WidgetTester tester, {int frames = 30}) async {
 
 Future<ProviderContainer> startApp(WidgetTester tester, Harness harness) async {
   final container = harness.container();
-  await tester.pumpWidget(
-    UncontrolledProviderScope(container: container, child: const ArgosApp()),
-  );
+  await tester.pumpWidget(UncontrolledProviderScope(container: container, child: const ArgosApp()));
   await settle(tester);
   return container;
 }
@@ -80,46 +78,40 @@ void main() {
     expect(find.byType(LoginPanel), findsOneWidget);
   });
 
-  testWidgets(
-    'login → "Ahora no" → pestañas del rol → perfil → cerrar sesión',
-    (tester) async {
-      await startApp(tester, Harness());
-      await login(tester, 'ana@argos.demo', demoPassword);
+  testWidgets('login → "Ahora no" → pestañas del rol → perfil → cerrar sesión', (tester) async {
+    await startApp(tester, Harness());
+    await login(tester, 'ana@argos.demo', demoPassword);
 
-      // A5: sin biometría en el dispositivo solo se ofrece el PIN.
-      expect(find.text('Entra más rápido la próxima vez'), findsOneWidget);
-      expect(find.byType(BiometricPrompt), findsNothing);
-      await tester.tap(find.text('Ahora no'));
-      await settle(tester);
+    // A5: sin biometría en el dispositivo solo se ofrece el PIN.
+    expect(find.text('Entra más rápido la próxima vez'), findsOneWidget);
+    expect(find.byType(BiometricPrompt), findsNothing);
+    await tester.tap(find.text('Ahora no'));
+    await settle(tester);
 
-      // Shell de cleaner (ux-ui.md §4.1).
-      for (final label in ['Hoy', 'Semana', 'Inventario', 'Alertas', 'Perfil']) {
-        expect(find.widgetWithText(NavTabItem, label), findsOneWidget, reason: label);
-      }
-      expect(find.text('Hola, Ana'), findsOneWidget);
+    // Shell de cleaner (ux-ui.md §4.1).
+    for (final label in ['Hoy', 'Semana', 'Inventario', 'Alertas', 'Perfil']) {
+      expect(find.widgetWithText(NavTabItem, label), findsOneWidget, reason: label);
+    }
+    expect(find.text('Hola, Ana'), findsOneWidget);
 
-      await tester.tap(find.widgetWithText(NavTabItem, 'Perfil'));
-      await settle(tester);
-      expect(find.text('Ana López'), findsOneWidget);
-      expect(find.text('Colaborador de limpieza · Costa Limpia S.A.'), findsOneWidget);
-      expect(find.text('Cambiar de empresa'), findsNothing, reason: 'solo tiene una empresa');
+    await tester.tap(find.widgetWithText(NavTabItem, 'Perfil'));
+    await settle(tester);
+    expect(find.text('Ana López'), findsOneWidget);
+    expect(find.text('Colaborador de limpieza · Costa Limpia S.A.'), findsOneWidget);
+    expect(find.text('Cambiar de empresa'), findsNothing, reason: 'solo tiene una empresa');
 
-      await tester.scrollUntilVisible(
-        find.text('Cerrar sesión'),
-        200,
-        scrollable: find
-            .ancestor(of: find.text('Ana López'), matching: find.byType(Scrollable))
-            .first,
-      );
-      await tester.pump();
-      await tester.tap(find.text('Cerrar sesión'));
-      await settle(tester);
-      await tester.tap(find.widgetWithText(DangerButton, 'Cerrar sesión'));
-      await settle(tester);
+    // El perfil ya trae la tarjeta de trabajo; fijamos el scrollable antes
+    // de desplazar para no perderlo cuando "Ana López" salga de pantalla.
+    final profileScroll = find.ancestor(of: find.text('Ana López'), matching: find.byType(Scrollable)).first.evaluate().single.widget;
+    await tester.scrollUntilVisible(find.text('Cerrar sesión'), 200, scrollable: find.byWidget(profileScroll));
+    await tester.pump();
+    await tester.tap(find.text('Cerrar sesión'));
+    await settle(tester);
+    await tester.tap(find.widgetWithText(DangerButton, 'Cerrar sesión'));
+    await settle(tester);
 
-      expect(find.byType(LoginPanel), findsOneWidget);
-    },
-  );
+    expect(find.byType(LoginPanel), findsOneWidget);
+  });
 
   testWidgets('supervisor con dos empresas elige empresa y ve "Más"', (tester) async {
     await startApp(tester, Harness());

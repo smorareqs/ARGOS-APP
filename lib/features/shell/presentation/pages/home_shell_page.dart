@@ -1,6 +1,7 @@
 import 'package:argos_app/core/utils/date_labels.dart';
 import 'package:argos_app/features/auth/presentation/providers/auth_state.dart';
 import 'package:argos_app/features/auth/presentation/providers/session_controller.dart';
+import 'package:argos_app/features/hr/presentation/pages/metrics_pages.dart';
 import 'package:argos_app/features/inventory/presentation/pages/inventory_page.dart';
 import 'package:argos_app/features/notifications/presentation/pages/notifications_page.dart';
 import 'package:argos_app/features/notifications/presentation/providers/inbox_controller.dart';
@@ -74,6 +75,7 @@ class HomeShellPage extends ConsumerWidget {
             ShellTab.security => const SecurityBoardPage(),
             ShellTab.alarms => const SecurityAlarmsPage(),
             ShellTab.sharedAreas => const SecurityAreasPage(),
+            ShellTab.reports => const ReportsPage(),
             _ => ComingSoonTab(tab: tab),
           },
       ],

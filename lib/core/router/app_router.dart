@@ -31,6 +31,10 @@ import 'package:argos_app/features/tickets/presentation/pages/tickets_page.dart'
 import 'package:argos_app/features/tasks/presentation/pages/task_close_page.dart';
 import 'package:argos_app/features/tasks/presentation/pages/task_detail_page.dart';
 import 'package:argos_app/features/tasks/presentation/pages/task_execution_page.dart';
+import 'package:argos_app/features/hr/presentation/pages/attendance_page.dart';
+import 'package:argos_app/features/hr/presentation/pages/disciplinary_page.dart';
+import 'package:argos_app/features/hr/presentation/pages/metrics_pages.dart';
+import 'package:argos_app/features/hr/presentation/pages/payslips_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -190,6 +194,20 @@ GoRouter appRouter(Ref ref) {
       GoRoute(path: '/guest/parking', builder: (context, state) => const GuestParkingPage()),
       GoRoute(path: '/guest/report', builder: (context, state) => const GuestReportPage()),
       GoRoute(path: '/guest/help', builder: (context, state) => const GuestHelpPage()),
+      // Fase 5: asistencia, boletas, disciplina, métricas y reportes.
+      GoRoute(path: '/attendance', builder: (context, state) => const AttendancePage()),
+      GoRoute(
+        path: '/payslips',
+        builder: (context, state) => PayslipsPage(openId: state.uri.queryParameters['entry']),
+      ),
+      GoRoute(path: '/disciplinary', builder: (context, state) => const DisciplinaryPage()),
+      GoRoute(
+        path: '/disciplinary/:id',
+        builder: (context, state) => DisciplinaryDetailPage(id: state.pathParameters['id']!),
+      ),
+      GoRoute(path: '/metrics', builder: (context, state) => const MyMetricsPage()),
+      GoRoute(path: '/metrics/team', builder: (context, state) => const TeamMetricsPage()),
+      GoRoute(path: '/reports', builder: (context, state) => const ReportsPage(showBack: true)),
     ],
     errorBuilder: (context, state) => Scaffold(
       body: Center(child: Text('Ruta no encontrada: ${state.uri}')),

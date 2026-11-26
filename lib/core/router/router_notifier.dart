@@ -91,6 +91,13 @@ class RouterNotifier extends ChangeNotifier {
             path.startsWith('/tickets/') ||
             path.startsWith('/reservations/') ||
             path.startsWith('/guests/') ||
+            path == '/attendance' ||
+            path == '/payslips' ||
+            path == '/disciplinary' ||
+            path.startsWith('/disciplinary/') ||
+            path == '/metrics' ||
+            path == '/metrics/team' ||
+            path == '/reports' ||
             tabsForSession(session).any((t) => path == '/home/${t.id}'),
     };
   }

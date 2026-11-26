@@ -15,6 +15,11 @@ const _available = [
   '/reservations/',
   '/security',
   '/guest',
+  '/attendance',
+  '/payslips',
+  '/disciplinary',
+  '/metrics',
+  '/reports',
 ];
 
 bool isAppRouteAvailable(String route) =>

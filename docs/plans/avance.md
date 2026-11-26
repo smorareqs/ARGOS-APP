@@ -749,3 +749,23 @@ Maps SDK restringida a la app (la del navegador está restringida por dominio).
   completo del huésped desde el login, check-in con registro y depósito, alarmas, parqueo y las pantallas a
   390 px). Pendiente: ofrecer la inspección `pre_arrival` con las fotos "después" al validar una limpieza
   ligada a reserva (hoy se hace desde C6).
+* [B] **Fase 5 en el backend: asistencia, métricas, metas e incentivos.** Migración
+  `0009_attendance_metrics` (marcas con entrada abierta única, `performance_snapshots`, `goals`,
+  `incentive_awards`). Asistencia: `POST /attendance/clock-in` y `/clock-out` con GPS obligatorio y selfie
+  opcional, `GET /attendance/me?month=` (horario, tardanzas, fuera de horario), `GET /attendance/day` (C1,
+  también para supervisión), alta y corrección manual de RRHH. Trabajo `attendance_autoclose` (cada 15 min,
+  cierra a las 16 h y avisa). Métricas: `/metrics/me`, `/metrics/team`, `/metrics/board`, `/metrics/report`
+  (E3: ocupación, limpiezas, tickets y por propiedad) y metas con incentivos (`/metrics/goals`,
+  `/metrics/incentives`, `decide`); `performance_snapshot` diario e `incentive_evaluation`. La nómina de A
+  ya toma las horas de la asistencia (`attendance_source=attendance`). La semilla trae dos meses de marcas,
+  3 metas y 1 incentivo pendiente. **Para A:** en la web ya están apagados los mocks de `attendance` y
+  `metrics`.
+* [B] **Fase 5 en la app.** B15 asistencia (hora en vivo, horario del día, botón grande de entrada/salida
+  con GPS y selfie opcional, resumen del mes, tardanzas e historial), B19 mis métricas (semana/mes,
+  tendencia, puesto en mi rol, metas), métricas del equipo para supervisión, E3 reportes del mes para el
+  propietario (su pestaña), B20 mis boletas (última boleta, detalle de ingresos y descuentos, PDF firmado),
+  B21 disciplina con "Confirmo que la recibí" y comentario opcional, y en C1 quién ya marcó hoy. Entradas
+  desde Perfil ("Mi trabajo") y Más.
+* [B] Pruebas en verde: integración del backend (`TestAttendanceFlow`, `TestMetricsGoalsAndIncentives`,
+  nómina con asistencia) y 98 de la app. Pendiente para Chris: marcar entrada con el GPS y la cámara del
+  teléfono y abrir el PDF de una boleta real.

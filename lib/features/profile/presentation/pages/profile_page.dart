@@ -11,9 +11,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-/// B17 · Perfil. Solo muestra lo que ya existe en la fase 1: cambiar de
-/// empresa, sesiones, inicio rápido, contraseña y cerrar sesión. Métricas,
-/// boletas, disciplina, asistencia y chat se agregan con sus fases.
+/// B17 · Perfil: asistencia, métricas, boletas y disciplina (fase 5) según
+/// los permisos; cambiar de empresa, sesiones, avisos, inicio rápido,
+/// contraseña y cerrar sesión.
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key, this.showBack = false});
 
@@ -48,6 +48,44 @@ class ProfilePage extends ConsumerWidget {
           const SizedBox(height: 16),
         _Header(session: session),
         const SizedBox(height: CustomDimensions.spacingLg),
+        if (_hasWork(session)) ...[
+          AppCard(
+            padding: EdgeInsets.zero,
+            child: Column(
+              children: [
+                if (session.can('hr.attendance.own'))
+                  AppListTile(
+                    icon: CustomIcons.time,
+                    title: 'Asistencia',
+                    subtitle: 'Marcar entrada y salida, y tu mes',
+                    onTap: () => context.push('/attendance'),
+                  ),
+                if (session.can('metrics.own'))
+                  AppListTile(
+                    icon: CustomIcons.metrics,
+                    title: 'Mis métricas',
+                    subtitle: 'Limpiezas, puntualidad y metas',
+                    onTap: () => context.push('/metrics'),
+                  ),
+                if (session.can('hr.attendance.own') && (session.tenant.features['payroll'] ?? false))
+                  AppListTile(
+                    icon: CustomIcons.document,
+                    title: 'Mis boletas',
+                    subtitle: 'Tus pagos de cada quincena',
+                    onTap: () => context.push('/payslips'),
+                  ),
+                if (session.can('hr.disciplinary.own'))
+                  AppListTile(
+                    icon: CustomIcons.notes,
+                    title: 'Disciplina',
+                    subtitle: 'Llamadas de atención y su acuse',
+                    onTap: () => context.push('/disciplinary'),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: CustomDimensions.spacingMd),
+        ],
         AppCard(
           padding: EdgeInsets.zero,
           child: Column(
@@ -133,6 +171,9 @@ class ProfilePage extends ConsumerWidget {
         ? Scaffold(backgroundColor: CustomColors.background, body: SafeArea(child: content))
         : SafeArea(child: content);
   }
+
+  static bool _hasWork(Session s) =>
+      s.can('hr.attendance.own') || s.can('metrics.own') || s.can('hr.disciplinary.own');
 
   static String _quickUnlockLabel(QuickUnlockSettings? settings) {
     if (settings == null) return '';

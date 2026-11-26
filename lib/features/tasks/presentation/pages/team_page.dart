@@ -1,4 +1,6 @@
 import 'package:argos_app/core/utils/date_labels.dart';
+import 'package:argos_app/features/hr/data/hr_repository.dart';
+import 'package:argos_app/features/hr/models/hr.dart';
 import 'package:argos_app/features/tasks/models/task_summary.dart';
 import 'package:argos_app/features/tasks/presentation/providers/agenda_providers.dart';
 import 'package:argos_app/features/tasks/presentation/widgets/agenda_task_card.dart';
@@ -47,9 +49,14 @@ class _TeamPageState extends ConsumerState<TeamPage> {
     final unassigned = tasks.where((t) => t.assigneeId == null).length;
 
     final groups = <String, List<TaskSummary>>{};
+    final idOf = <String, String>{};
     for (final t in tasks.where(_matches)) {
-      groups.putIfAbsent(t.assigneeName ?? 'Sin asignar', () => []).add(t);
+      final name = t.assigneeName ?? 'Sin asignar';
+      groups.putIfAbsent(name, () => []).add(t);
+      if (t.assigneeId != null) idOf[name] = t.assigneeId!;
     }
+    // Quién marcó ese día (solo se muestra si hay marcajes que leer).
+    final punches = ref.watch(teamAttendanceProvider(_dayKey(_date))).valueOrNull ?? const <AttendanceRecord>[];
     final today = DateUtils.dateOnly(widget.today ?? DateTime.now());
 
     return SafeArea(
@@ -143,7 +150,16 @@ class _TeamPageState extends ConsumerState<TeamPage> {
                           children: [
                             Avatar(name: e.key, size: 32),
                             const SizedBox(width: 10),
-                            Expanded(child: Text(e.key, style: CustomTypography.cardTitle)),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(e.key, style: CustomTypography.cardTitle),
+                                  if (punches.isNotEmpty && idOf[e.key] != null)
+                                    _Punch(records: punches.where((r) => r.userId == idOf[e.key]).toList()),
+                                ],
+                              ),
+                            ),
                             Text(
                               '${e.value.where((t) => t.status.isFinished).length}/${e.value.length}',
                               style: CustomTypography.data.copyWith(color: CustomColors.textSecondary),
@@ -166,6 +182,37 @@ class _TeamPageState extends ConsumerState<TeamPage> {
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+String _dayKey(DateTime d) =>
+    '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
+/// Estado de marcaje de la persona ese día.
+class _Punch extends StatelessWidget {
+  const _Punch({required this.records});
+
+  final List<AttendanceRecord> records;
+
+  @override
+  Widget build(BuildContext context) {
+    final open = records.where((r) => r.open).firstOrNull;
+    final last = records.lastOrNull;
+    final (color, text) = open != null
+        ? (CustomColors.success, 'Entró ${hm(open.clockIn)}')
+        : last != null
+        ? (CustomColors.textSecondary, 'Salió ${hm(last.clockOut!)}')
+        : (CustomColors.textMuted, 'Sin marcar entrada');
+    return Padding(
+      padding: const EdgeInsets.only(top: 2),
+      child: Row(
+        children: [
+          Container(width: 7, height: 7, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+          const SizedBox(width: 6),
+          Text(text, style: CustomTypography.bodySmall.copyWith(color: color)),
         ],
       ),
     );

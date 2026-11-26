@@ -53,6 +53,27 @@ class MorePage extends ConsumerWidget {
                     subtitle: 'Reportadas en tus propiedades',
                     onTap: () => context.push('/tickets'),
                   ),
+                if (session.permissions.contains('metrics.team') || session.permissions.contains('metrics.all'))
+                  AppListTile(
+                    icon: CustomIcons.metrics,
+                    title: 'Métricas del equipo',
+                    subtitle: 'Ranking por rol, semana o mes',
+                    onTap: () => context.push('/metrics/team'),
+                  ),
+                if (session.permissions.contains('metrics.all'))
+                  AppListTile(
+                    icon: CustomIcons.reports,
+                    title: 'Reportes del mes',
+                    subtitle: 'Ocupación, limpiezas e incidencias por propiedad',
+                    onTap: () => context.push('/reports'),
+                  ),
+                if (session.permissions.contains('hr.attendance.own'))
+                  AppListTile(
+                    icon: CustomIcons.time,
+                    title: 'Mi asistencia',
+                    subtitle: 'Marcar entrada y salida',
+                    onTap: () => context.push('/attendance'),
+                  ),
                 AppListTile(
                   icon: CustomIcons.notifications,
                   title: 'Notificaciones',
